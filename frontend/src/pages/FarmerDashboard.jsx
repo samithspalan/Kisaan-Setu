@@ -1,4 +1,4 @@
-import { Sprout, Home, TrendingUp, Users, LogOut, Bell, User, Tractor, Newspaper, Filter, RefreshCw, MapPin, Clock } from 'lucide-react'
+import { Sprout, Home, TrendingUp, Users, LogOut, Bell, User, Tractor, Newspaper, Filter, RefreshCw, MapPin, Clock, ArrowLeft, Layers } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import farmerBg from '../assets/farmerdashboard.png'
@@ -10,6 +10,7 @@ export default function FarmerDashboard() {
   const [marketPrices, setMarketPrices] = useState([])
   const [loading, setLoading] = useState(true)
   const [priceUnit, setPriceUnit] = useState('kg') // kg, quintal, ton
+  const [activeCommodity, setActiveCommodity] = useState(null) // State for detailed view
 
   // Fetch Data from Backend
   const fetchMarketData = async () => {
@@ -318,44 +319,93 @@ export default function FarmerDashboard() {
                         <p className="text-stone-500 font-medium animate-pulse">Fetching latest market rates...</p>
                     </div>
                 ) : filteredPrices.length > 0 ? (
-                  filteredPrices.map((crop, index) => (
-                    <div key={index} className="bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.06)] overflow-hidden hover:shadow-[0_8px_24px_rgba(0,0,0,0.12)] hover:-translate-y-1 transition-all duration-300 border border-stone-100 flex flex-col group h-full">
-                      {/* Card Image */}
-                      <div className="h-40 w-full relative overflow-hidden bg-stone-100">
-                        <img 
-                          src={getCropImage(crop.commodity)} 
-                          alt={crop.commodity}
-                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                          onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.src = 'https://placehold.co/600x400?text=No+Image'; 
-                          }}
-                        />
-                         <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent"></div>
-                      </div>
-                      
-                      {/* Card Body */}
-                      <div className="p-4 flex flex-col flex-grow">
-                          <h3 className="text-lg font-bold text-stone-800 mb-0.5 group-hover:text-green-700 transition-colors">{crop.commodity}</h3>
-                          
-                          <div className="mt-2 mb-4">
-                             <span className="text-2xl font-extrabold text-stone-900 tracking-tight">{formatPrice(crop.modal_price).split('/')[0]}</span>
-                             <span className="text-sm text-stone-500 font-medium ml-1">per {priceUnit}</span>
-                          </div>
+                  activeCommodity ? (
+                    // Detailed View for Selected Commodity
+                    <>
+                         <div className="col-span-full flex items-center justify-between mb-2 pb-2 border-b border-stone-100">
+                            <button 
+                                onClick={() => setActiveCommodity(null)}
+                                className="flex items-center gap-2 text-sm font-bold text-stone-600 hover:text-green-700 bg-white px-3 py-1.5 rounded-lg border border-stone-200 shadow-sm transition-all"
+                            >
+                                <ArrowLeft className="w-4 h-4" /> Back to Categories
+                            </button>
+                            <h3 className="text-lg font-bold text-green-800 bg-green-50 px-3 py-1 rounded-full">{activeCommodity}</h3>
+                        </div>
 
-                          <div className="mt-auto space-y-2.5 pt-3 border-t border-stone-50">
-                             <div className="flex items-start gap-2.5">
-                                <span className="bg-green-50 text-green-700 font-bold text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0 mt-0.5">Market</span>
-                                <p className="text-sm text-stone-600 font-medium leading-tight line-clamp-1" title={crop.market}>{crop.market}</p>
-                             </div>
-                             <div className="flex items-center gap-2">
-                                <Clock className="w-3.5 h-3.5 text-stone-400" />
-                                <p className="text-xs text-stone-400 font-medium">Updated: Just Now</p>
-                             </div>
-                          </div>
-                      </div>
-                    </div>
-                  ))
+                        {filteredPrices.filter(p => p.commodity === activeCommodity).map((crop, index) => (
+                             <div key={index} className="bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.06)] overflow-hidden hover:shadow-[0_8px_24px_rgba(0,0,0,0.12)] hover:-translate-y-1 transition-all duration-300 border border-stone-100 flex flex-col group h-full">
+                                {/* Card Image */}
+                                <div className="h-40 w-full relative overflow-hidden bg-stone-100">
+                                    <img 
+                                    src={getCropImage(crop.commodity)} 
+                                    alt={crop.commodity}
+                                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                                    onError={(e) => {
+                                        e.target.onerror = null;
+                                        e.target.src = 'https://placehold.co/600x400?text=No+Image'; 
+                                    }}
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent"></div>
+                                </div>
+                                
+                                {/* Card Body */}
+                                <div className="p-4 flex flex-col flex-grow">
+                                    <h3 className="text-lg font-bold text-stone-800 mb-0.5 group-hover:text-green-700 transition-colors">{crop.commodity}</h3>
+                                    
+                                    <div className="mt-2 mb-4">
+                                        <span className="text-2xl font-extrabold text-stone-900 tracking-tight">{formatPrice(crop.modal_price).split('/')[0]}</span>
+                                        <span className="text-sm text-stone-500 font-medium ml-1">per {priceUnit}</span>
+                                    </div>
+
+                                    <div className="mt-auto space-y-2.5 pt-3 border-t border-stone-50">
+                                        <div className="flex items-start gap-2.5">
+                                            <span className="bg-green-50 text-green-700 font-bold text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0 mt-0.5">Market</span>
+                                            <p className="text-sm text-stone-600 font-medium leading-tight line-clamp-1" title={crop.market}>{crop.market}</p>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <Clock className="w-3.5 h-3.5 text-stone-400" />
+                                            <p className="text-xs text-stone-400 font-medium">Updated: Just Now</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                </div>
+                        ))}
+                    </>
+                  ) : (
+                    // Grouped Collection View
+                    [...new Set(filteredPrices.map(item => item.commodity))].sort().map((commodityName) => {
+                         const count = filteredPrices.filter(p => p.commodity === commodityName).length;
+                         return (
+                            <div 
+                                key={commodityName} 
+                                onClick={() => setActiveCommodity(commodityName)}
+                                className="bg-white rounded-xl shadow-sm border border-stone-200 p-4 hover:shadow-md hover:border-green-400 cursor-pointer transition-all group flex items-center gap-5"
+                            >
+                                <div className="h-24 w-24 rounded-lg overflow-hidden shrink-0 bg-stone-100 shadow-inner">
+                                    <img 
+                                    src={getCropImage(commodityName)} 
+                                    alt={commodityName}
+                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                    onError={(e) => {
+                                        e.target.onerror = null;
+                                        e.target.src = 'https://placehold.co/600x400?text=No+Image'; 
+                                    }}
+                                    />
+                                </div>
+                                <div className="flex-1">
+                                    <h3 className="text-xl font-bold text-stone-800 group-hover:text-green-700 transition-colors mb-1">{commodityName}</h3>
+                                    <div className="flex items-center gap-2 text-stone-500 text-sm font-medium">
+                                        <Layers className="w-4 h-4 text-green-500"/>
+                                        <span>{count} {count === 1 ? 'Market Listing' : 'Market Listings'}</span>
+                                    </div>
+                                    <p className="text-xs text-stone-400 mt-2 flex items-center gap-1 group-hover:text-green-600 group-hover:translate-x-1 transition-all">
+                                        View Prices &rarr;
+                                    </p>
+                                </div>
+                            </div>
+                         )
+                    })
+                  )
                 ) : (
                     <div className="col-span-full text-center py-20 bg-[#f9f9f9] rounded-xl border-2 border-dashed border-stone-200">
                         <Filter className="h-10 w-10 mx-auto text-stone-300 mb-3"/>
