@@ -1,6 +1,7 @@
 import { Sprout, Home, TrendingUp, Users, LogOut, Bell, User, Tractor, Newspaper, Filter, RefreshCw, MapPin, Clock } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import axios from 'axios'
+import farmerBg from '../assets/farmerdashboard.png'
 
 export default function FarmerDashboard() {
   const [selectedCrop, setSelectedCrop] = useState('all')
@@ -231,8 +232,8 @@ export default function FarmerDashboard() {
       <div className="h-20"></div>
 
       {/* Hero Section */}
-      <section className="relative bg-linear-to-r from-green-600 to-emerald-600 text-white py-12">
-        <div className="absolute inset-0 opacity-20 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2760%27%20height%3D%2760%27%20viewBox%3D%270%200%2060%2060%27%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%3E%3Cg%20fill%3D%27none%27%20fill-rule%3D%27evenodd%27%3E%3Cg%20fill%3D%27%23ffffff%27%20fill-opacity%3D%270.1%27%3E%3Cpath%20d%3D%27M36%2034v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6%2034v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6%204V0H4v4H0v2h4v4h2V6h4V4H6z%27/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')]"></div>
+      <section className="relative text-white py-12 overflow-hidden" style={{backgroundImage: `url(${farmerBg})`, backgroundSize: 'cover', backgroundPosition: 'center'}}>
+        <div className="absolute inset-0 bg-black/40"></div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-5xl md:text-6xl font-bold mb-4">
             Empowering Farmers with Real-Time Market Access

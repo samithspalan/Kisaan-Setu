@@ -1,13 +1,112 @@
 import { Sprout, Shield, ShoppingCart } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 export default function HomePage() {
   const [activeLink, setActiveLink] = useState('')
+  const canvasRef = useRef(null)
+  const mousePos = useRef({ x: 0, y: 0 })
+  const particles = useRef([])
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    const ctx = canvas.getContext('2d')
+    canvas.width = window.innerWidth
+    canvas.height = window.innerHeight
+
+    // Initialize particles
+    particles.current = Array.from({ length: 200}, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      size: Math.random() * 3 + 1,
+      speedX: Math.random() * 2 - 1,
+      speedY: Math.random() * 2 - 1,
+      opacity: Math.random() * 0.5 + 0.2
+    }))
+
+    const handleMouseMove = (e) => {
+      mousePos.current = { x: e.clientX, y: e.clientY }
+    }
+
+    const animate = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      ctx.fillStyle = 'rgba(16, 185, 129, 0.05)'
+
+      particles.current.forEach((particle, index) => {
+        // Move towards mouse position
+        const dx = mousePos.current.x - particle.x
+        const dy = mousePos.current.y - particle.y
+        const distance = Math.sqrt(dx * dx + dy * dy)
+
+        if (distance < 200) {
+          particle.x += dx * 0.02
+          particle.y += dy * 0.02
+        }
+
+        // Movement
+        particle.x += particle.speedX
+        particle.y += particle.speedY
+
+        // Bounce off walls
+        if (particle.x < 0 || particle.x > canvas.width) particle.speedX *= -1
+        if (particle.y < 0 || particle.y > canvas.height) particle.speedY *= -1
+
+        // Draw particle
+        ctx.globalAlpha = particle.opacity
+        ctx.fillStyle = '#10b981'
+        ctx.beginPath()
+        ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2)
+        ctx.fill()
+
+        // Draw lines between nearby particles
+        particles.current.forEach((other, otherIndex) => {
+          if (index < otherIndex) {
+            const distX = particle.x - other.x
+            const distY = particle.y - other.y
+            const dist = Math.sqrt(distX * distX + distY * distY)
+
+            if (dist < 100) {
+              ctx.globalAlpha = (1 - dist / 100) * 0.3
+              ctx.strokeStyle = '#10b981'
+              ctx.lineWidth = 1
+              ctx.beginPath()
+              ctx.moveTo(particle.x, particle.y)
+              ctx.lineTo(other.x, other.y)
+              ctx.stroke()
+            }
+          }
+        })
+      })
+
+      ctx.globalAlpha = 1
+      requestAnimationFrame(animate)
+    }
+
+    window.addEventListener('mousemove', handleMouseMove)
+    animate()
+
+    const handleResize = () => {
+      canvas.width = window.innerWidth
+      canvas.height = window.innerHeight
+    }
+
+    window.addEventListener('resize', handleResize)
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('resize', handleResize)
+    }
+  }, [])
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-green-50 via-white to-green-50">
-      {/* Logo - Fixed in top-left corner */}
-      <div className="fixed top-6 left-6 z-50 flex items-center gap-2">
+    <div className="min-h-screen bg-linear-to-b from-green-50 via-white to-green-50 relative overflow-hidden">
+      
+      <canvas 
+        ref={canvasRef}
+        className="fixed top-0 left-0 w-full h-full z-0 pointer-events-none"
+      />
+      <div className="fixed top-6 left-6 z-50 flex items-center gap-2 relative z-10">
         <Sprout className="w-8 h-8 text-green-600" />
         <h2 className="text-2xl font-bold text-green-700">KisanSetu</h2>
       </div>
@@ -57,7 +156,7 @@ export default function HomePage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden py-12 md:py-20">
+      <section className="relative overflow-hidden py-12 md:py-20 z-10">
         <div className="absolute top-0 right-0 -mr-40 -mt-40 w-80 h-80 bg-green-100 rounded-full opacity-50"></div>
         <div className="absolute bottom-0 left-0 -ml-40 -mb-40 w-80 h-80 bg-emerald-100 rounded-full opacity-50"></div>
 
@@ -83,7 +182,7 @@ export default function HomePage() {
       </section>
 
       {/* Login Cards Section */}
-      <section className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <section className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 z-10">
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
             Select Your Role
@@ -168,7 +267,7 @@ export default function HomePage() {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-12 bg-white">
+      <section id="features" className="py-12 bg-white z-10 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
@@ -206,7 +305,7 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-linear-to-r from-green-700 to-emerald-700 text-white py-8 mt-8">
+      <footer className="bg-linear-to-r from-green-700 to-emerald-700 text-white py-8 mt-8 z-10 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-3 gap-8 mb-8">
             <div>
