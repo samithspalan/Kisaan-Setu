@@ -118,23 +118,3 @@ This approach transforms KisanSetu into a decision-support and empowerment platf
    npm run dev
    ```
 
----
-
-### Image Assets Configuration
-
-The application uses local images for crops in the dashboard.
-Please populate the `frontend/public/images/` folder with the following files:
-
-*   `coconut.jpg`
-*   `paddy.jpg`
-*   `arecanut.jpg`
-*   `banana.jpg`
-*   `spices.jpg`
-*   `onion.jpg`
-*   `potato.jpg`
-*   `tomato.jpg`
-*   `cashew.jpg`
-*   `default.jpg`
-
-Ensure these images are present for the best visual experience.
-

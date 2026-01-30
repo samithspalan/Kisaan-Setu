@@ -100,21 +100,20 @@ export default function HomePage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-green-50 via-white to-green-50 relative overflow-hidden">
+    <div className="min-h-screen bg-linear-to-b from-green-50 via-white to-green-50 relative overflow-hidden scroll-smooth">
       
       <canvas 
         ref={canvasRef}
         className="fixed top-0 left-0 w-full h-full z-0 pointer-events-none"
       />
-      <div className="fixed top-6 left-6 z-50 flex items-center gap-2 relative z-10">
+      <div className="fixed top-6 left-6 z-50 flex items-center gap-2">
         <Sprout className="w-8 h-8 text-green-600" />
         <h2 className="text-2xl font-bold text-green-700">KisanSetu</h2>
       </div>
 
-      {/* Navigation Bar - Centered at top, sticky, transparent */}
       <nav className="fixed top-4 left-1/2 transform -translate-x-1/2 z-40">
         <div className="bg-white/30 backdrop-blur-md rounded-full px-6 py-2 shadow-lg border border-white/20">
-          <div className="flex gap-8 items-center">
+          <div className="flex gap-12 items-center">
             <a 
               href="#home" 
               onClick={() => setActiveLink('home')}
@@ -162,22 +161,35 @@ export default function HomePage() {
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="mb-8 inline-block">
-            <div className="bg-green-100 text-green-700 px-4 py-2 rounded-full text-sm font-semibold">
-              Welcome to KisanSetu
-            </div>
+           
           </div>
 
-          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 mb-6">
+          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-transparent bg-linear-to-r from-green-600 to-emerald-600 bg-clip-text mb-6">
             KisanSetu
           </h1>
 
-          <p className="text-xl md:text-2xl text-gray-600 mb-12 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-xl md:text-2xl text-gray-700 mb-8 max-w-2xl mx-auto leading-relaxed font-medium">
             A Digital Bridge Between Farmers and Markets
           </p>
 
-          <p className="text-gray-600 text-lg mb-12 max-w-2xl mx-auto">
-            Connecting agricultural communities with opportunities. Empower farmers, serve customers, manage operations.
+          <p className="text-gray-600 text-lg mb-12 max-w-3xl mx-auto leading-relaxed">
+            Connecting agricultural communities with opportunities. Empower farmers, serve customers, manage operations seamlessly with our modern platform.
           </p>
+
+          <div className="flex flex-wrap gap-6 justify-center items-center mb-12">
+            <div className="bg-white/80 backdrop-blur-sm rounded-xl p-8 shadow-xl border border-green-100 hover:shadow-2xl transition-all duration-500 hover:scale-105 animate-[float_2s_ease-in-out]">
+              <div className="text-5xl font-bold text-green-600 mb-2 animate-[pulse_2s_ease-in-out_infinite]">10K+</div>
+              <div className="text-gray-700 text-sm font-medium">Active Farmers</div>
+            </div>
+            <div className="bg-white/80 backdrop-blur-sm rounded-xl p-8 shadow-xl border border-green-100 hover:shadow-2xl transition-all duration-500 hover:scale-105 animate-[float_2s_ease-in-out_0.3s]">
+              <div className="text-5xl font-bold text-green-600 mb-2 animate-[pulse_2s_ease-in-out_infinite_0.3s]">500+</div>
+              <div className="text-gray-700 text-sm font-medium">Verified Buyers</div>
+            </div>
+            <div className="bg-white/80 backdrop-blur-sm rounded-xl p-8 shadow-xl border border-green-100 hover:shadow-2xl transition-all duration-500 hover:scale-105 animate-[float_2s_ease-in-out_0.6s]">
+              <div className="text-5xl font-bold text-green-600 mb-2 animate-[pulse_2s_ease-in-out_infinite_0.6s]">₹50Cr+</div>
+              <div className="text-gray-700 text-sm font-medium">Transactions</div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -216,7 +228,7 @@ export default function HomePage() {
           {/* Admin Card */}
           <a href="/admin-login" className="group block">
             <div className="h-full bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform group-hover:scale-105 overflow-hidden">
-              <div className="bg-gradient-to-br from-emerald-400 to-emerald-600 p-8 relative overflow-hidden">
+              <div className="bg-linear-to-br from-emerald-400 to-emerald-600 p-8 relative overflow-hidden">
                 <div className="absolute top-0 right-0 -mr-20 -mt-20 w-40 h-40 bg-white opacity-10 rounded-full"></div>
                 <Shield className="w-16 h-16 text-white relative z-10" strokeWidth={1.5} />
               </div>
@@ -225,7 +237,7 @@ export default function HomePage() {
                 <p className="text-gray-600 mb-6 leading-relaxed">
                   Manage platform, users, and market operations
                 </p>
-                <button className="w-full bg-gradient-to-r from-emerald-400 to-emerald-600 hover:from-emerald-500 hover:to-emerald-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300">
+                <button className="w-full bg-linear-to-r from-emerald-400 to-emerald-600 hover:from-emerald-500 hover:to-emerald-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300">
                   Login as Admin
                 </button>
               </div>
@@ -235,7 +247,7 @@ export default function HomePage() {
           {/* Customer Card */}
           <a href="/customer-login" className="group block">
             <div className="h-full bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform group-hover:scale-105 overflow-hidden">
-              <div className="bg-gradient-to-br from-teal-400 to-teal-600 p-8 relative overflow-hidden">
+              <div className="bg-linear-to-br from-teal-400 to-teal-600 p-8 relative overflow-hidden">
                 <div className="absolute top-0 right-0 -mr-20 -mt-20 w-40 h-40 bg-white opacity-10 rounded-full"></div>
                 <ShoppingCart className="w-16 h-16 text-white relative z-10" strokeWidth={1.5} />
               </div>
@@ -244,7 +256,7 @@ export default function HomePage() {
                 <p className="text-gray-600 mb-6 leading-relaxed">
                   Browse and purchase fresh produce directly from farmers
                 </p>
-                <button className="w-full bg-gradient-to-r from-teal-400 to-teal-600 hover:from-teal-500 hover:to-teal-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300">
+                <button className="w-full bg-linear-to-r from-teal-400 to-teal-600 hover:from-teal-500 hover:to-teal-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300">
                   Login as Customer
                 </button>
               </div>
@@ -253,14 +265,14 @@ export default function HomePage() {
         </div>
 
         {/* CTA Section */}
-        <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl border border-green-200 p-8 md:p-12 text-center">
+        <div className="bg-linear-to-r from-green-50 to-emerald-50 rounded-2xl border border-green-200 p-8 md:p-12 text-center">
           <h3 className="text-2xl font-bold text-gray-900 mb-3">
             Don't have an account?
           </h3>
           <p className="text-gray-600 mb-6">
             Create a new account to join our growing community of farmers and customers.
           </p>
-          <button className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold py-3 px-8 rounded-lg transition-all duration-300">
+          <button className="bg-linear-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold py-3 px-8 rounded-lg transition-all duration-300">
             Sign Up Now
           </button>
         </div>
@@ -305,7 +317,7 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-linear-to-r from-green-700 to-emerald-700 text-white py-8 mt-8 z-10 relative">
+      <footer id="contact" className="bg-linear-to-r from-green-700 to-emerald-700 text-white py-8 mt-8 z-10 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-3 gap-8 mb-8">
             <div>

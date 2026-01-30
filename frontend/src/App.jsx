@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import HomePage from './pages/HomePage'
 import FarmerDashboard from './pages/FarmerDashboard'
+import AboutPage from './pages/AboutPage'
 
 function App() {
   const [currentPage, setCurrentPage] = useState(window.location.hash.slice(1) || 'home')
@@ -22,6 +23,8 @@ function App() {
     <div>
       {currentPage === 'farmer-dashboard' ? (
         <FarmerDashboard />
+      ) : currentPage === 'about' ? (
+        <AboutPage />
       ) : (
         <HomePage />
       )}
