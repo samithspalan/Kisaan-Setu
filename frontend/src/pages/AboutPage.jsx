@@ -1,4 +1,4 @@
-import { Sprout, Linkedin, Github } from 'lucide-react'
+import { Sprout, Linkedin, Github, Leaf } from 'lucide-react'
 import { useState } from 'react'
 
 export default function AboutPage() {
@@ -12,7 +12,7 @@ export default function AboutPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-green-50 via-white to-green-50">
+    <div className="min-h-screen bg-slate-50">
       {/* Logo - Fixed in top-left corner */}
       <div className="fixed top-6 left-6 z-50 flex items-center gap-2">
         <Sprout className="w-8 h-8 text-green-600" />
@@ -21,7 +21,7 @@ export default function AboutPage() {
 
       {/* Navigation Bar - Centered at top, sticky, transparent */}
       <nav className="fixed top-4 left-1/2 transform -translate-x-1/2 z-40">
-        <div className="bg-white/30 backdrop-blur-md rounded-full px-6 py-2 shadow-lg border border-white/20">
+        <div className="bg-white/80 backdrop-blur-md rounded-full px-6 py-2 shadow-lg border border-white/20">
           <div className="flex gap-8 items-center">
             <a 
               href="#home" 
@@ -64,64 +64,80 @@ export default function AboutPage() {
       </nav>
 
       {/* Top Spacing for fixed navbar */}
-      <div className="h-20"></div>
+      <div className="h-24"></div>
 
       {/* About Hero Section */}
-      <section className="relative py-4 z-10">
+      <section className="relative py-12 z-10">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-2xl md:text-3xl font-bold text-transparent bg-linear-to-r from-green-600 to-emerald-600 bg-clip-text mb-2">
-            About Us
+          <span className="inline-block py-1 px-3 rounded-full bg-green-100 text-green-600 text-sm font-semibold mb-4">
+            Our Mission
+          </span>
+          <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-6">
+            Cultivating <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-emerald-600">Innovation</span>
           </h1>
-          <p className="text-sm text-gray-700 leading-relaxed">
-            We are a passionate team dedicated to bridging the gap between farmers and markets through innovative technology solutions.
+          <p className="text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto">
+            We are a passionate team dedicated to bridging the gap between farmers and markets through innovative technology solutions. Building a sustainable future for agriculture.
           </p>
         </div>
       </section>
 
       {/* Team Section */}
-      <section className="relative py-6 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-bold text-center text-gray-900 mb-8">
-            Meet Our Team
+      <section className="relative py-16 z-10 px-4">
+        <div className="max-w-7xl mx-auto">
+          <h2 className="text-3xl font-bold text-center text-slate-900 mb-12">
+            Meet The Minds
           </h2>
 
-          {/* Team Members - Single Row */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Team Members */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {teamMembers.map((member) => (
               <div 
                 key={member.id}
-                className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 p-8 border border-green-100"
+                className="group bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden border border-slate-100"
               >
-                <div className="flex flex-col items-center text-center">
-                  {/* Avatar Placeholder */}
-                  <div className="w-28 h-28 bg-linear-to-br from-green-400 to-emerald-600 rounded-full mb-4 flex items-center justify-center">
-                    <span className="text-4xl font-bold text-white">
-                      {member.name.charAt(0).toUpperCase()}
-                    </span>
+                {/* Gradient Header */}
+                <div className="bg-gradient-to-br from-emerald-500 to-green-600 p-8 relative overflow-hidden text-center h-32">
+                   <div className="absolute top-0 right-0 -mr-16 -mt-16 w-32 h-32 bg-white opacity-20 rounded-full blur-2xl"></div>
+                   <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-32 h-32 bg-black opacity-10 rounded-full blur-2xl"></div>
+                </div>
+
+                {/* Avatar & Info */}
+                <div className="px-6 pb-6 relative">
+                  <div className="flex justify-center -mt-12 mb-4 relative z-10">
+                    <div className="w-24 h-24 bg-white rounded-full p-1.5 shadow-lg">
+                      <div className="w-full h-full bg-slate-100 rounded-full flex items-center justify-center overflow-hidden">
+                        <span className="text-3xl font-bold text-emerald-600">
+                          {member.name.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Member Info */}
-                  <h3 className="text-base font-bold text-gray-900 mb-1">
-                    {member.name}
-                  </h3>
-                  <p className="text-gray-600 text-xs mb-4">{member.role}</p>
+                  <div className="text-center">
+                    <h3 className="text-lg font-bold text-slate-900 mb-1 group-hover:text-emerald-600 transition-colors">
+                      {member.name}
+                    </h3>
+                    <p className="text-emerald-600 text-sm font-medium mb-6 uppercase tracking-wide">{member.role}</p>
 
-                  {/* Social Links */}
-                  <div className="flex gap-4">
-                    <a 
-                      href={member.linkedin}
-                      className="inline-flex items-center gap-1 text-green-600 hover:text-green-700 transition-colors text-xs"
-                    >
-                      <Linkedin className="w-4 h-4" />
-                      <span>LinkedIn</span>
-                    </a>
-                    <a 
-                      href={member.github}
-                      className="inline-flex items-center gap-1 text-green-600 hover:text-green-700 transition-colors text-xs"
-                    >
-                      <Github className="w-4 h-4" />
-                      <span>GitHub</span>
-                    </a>
+                    {/* Social Links */}
+                    <div className="flex justify-center gap-4">
+                      <a 
+                        href={member.linkedin}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2 rounded-full bg-slate-50 text-slate-600 hover:bg-blue-50 hover:text-blue-600 transition-all border border-slate-200"
+                      >
+                        <Linkedin className="w-4 h-4" />
+                      </a>
+                      <a 
+                        href={member.github}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2 rounded-full bg-slate-50 text-slate-600 hover:bg-gray-800 hover:text-white transition-all border border-slate-200"
+                      >
+                        <Github className="w-4 h-4" />
+                      </a>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -131,41 +147,41 @@ export default function AboutPage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-linear-to-r from-green-700 to-emerald-700 text-white py-8 mt-16 z-10 relative">
+      <footer className="bg-[#0f172a] text-slate-300 py-12 mt-16 z-10 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-3 gap-8 mb-8">
+          <div className="grid md:grid-cols-3 gap-8 mb-12">
             <div>
               <div className="flex items-center gap-2 mb-4">
-                <Sprout className="w-6 h-6" />
-                <span className="text-xl font-bold">KisanSetu</span>
+                <Leaf className="w-6 h-6 text-emerald-500" />
+                <span className="text-xl font-bold text-white">KisanSetu</span>
               </div>
-              <p className="text-green-100">
-                Bridging the gap between farmers and markets.
+              <p className="text-slate-400 text-sm leading-relaxed">
+                Bridging the gap between India's hardworking farmers and the modern marketplace.
               </p>
             </div>
             <div>
-              <h4 className="font-semibold mb-4">Quick Links</h4>
-              <ul className="space-y-2 text-green-100">
-                <li><a href="#about" className="hover:text-white transition">About Us</a></li>
-                <li><a href="#home" className="hover:text-white transition">Home</a></li>
-                <li><a href="#contact" className="hover:text-white transition">Contact</a></li>
+              <h4 className="text-white font-semibold mb-4">Quick Links</h4>
+              <ul className="space-y-2 text-sm text-slate-400">
+                <li><a href="#about" className="hover:text-emerald-400 transition">About Us</a></li>
+                <li><a href="#home" className="hover:text-emerald-400 transition">Home</a></li>
+                <li><a href="#contact" className="hover:text-emerald-400 transition">Contact</a></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold mb-4">Support</h4>
-              <ul className="space-y-2 text-green-100">
-                <li><a href="#" className="hover:text-white transition">Help Center</a></li>
-                <li><a href="#" className="hover:text-white transition">Privacy Policy</a></li>
-                <li><a href="#" className="hover:text-white transition">Terms of Service</a></li>
+              <h4 className="text-white font-semibold mb-4">Legal</h4>
+              <ul className="space-y-2 text-sm text-slate-400">
+                <li><a href="#" className="hover:text-emerald-400 transition">Privacy Policy</a></li>
+                <li><a href="#" className="hover:text-emerald-400 transition">Terms of Service</a></li>
               </ul>
             </div>
           </div>
 
-          <div className="border-t border-green-600 pt-8 text-center text-green-100">
-            <p>&copy; 2026 KisanSetu. All rights reserved. Building a better agricultural future.</p>
+          <div className="border-t border-slate-800 pt-8 text-center text-slate-500 text-sm">
+            <p>&copy; 2026 KisanSetu. All rights reserved.</p>
           </div>
         </div>
       </footer>
     </div>
   )
 }
+

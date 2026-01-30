@@ -1,4 +1,4 @@
-import { Sprout, Home, TrendingUp, Users, LogOut, Bell, User, Tractor, Newspaper, Filter, RefreshCw, MapPin, Clock, ArrowLeft, Layers } from 'lucide-react'
+import { Sprout, Home, TrendingUp, Users, LogOut, Bell, User, Tractor, Newspaper, Filter, RefreshCw, MapPin, Clock, ArrowLeft, Layers, Leaf, Store, Handshake, IndianRupee, Search, ShieldCheck, BarChart3, Building2, Globe, TrendingDown, Sun, CloudRain, Droplets } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import farmerBg from '../assets/farmerdashboard.png'
@@ -17,7 +17,7 @@ export default function FarmerDashboard() {
   const fetchMarketData = async () => {
     setLoading(true)
     try {
-      const response = await axios.get('http://localhost:5000/api/market-prices?limit=500')
+      const response = await axios.get('http://localhost:8080/api/market-prices?limit=500')
       if (response.data.success) {
         setMarketPrices(response.data.records)
       }
@@ -50,6 +50,38 @@ export default function FarmerDashboard() {
     "Himachal Pradesh": ["Apple", "Maize", "Wheat", "Barley", "Potato", "Stone Fruits"],
     "Jharkhand": ["Rice", "Maize", "Pulses", "Oilseeds", "Vegetables"],
     "Karnataka": ["Coffee", "Ragi", "Maize", "Sunflower", "Sugarcane", "Arecanut", "Silk"],
+    // Karnataka Districts
+    "Bagalkot": ["Sugarcane", "Maize", "Wheat", "Sunflower", "Pomegranate"],
+    "Bangalore Rural": ["Ragi", "Maize", "Grapes", "Mango", "Mulberry"],
+    "Bangalore Urban": ["Ragi", "Maize", "Groundnut", "Vegetables", "Flowers"],
+    "Belgaum": ["Sugarcane", "Maize", "Tobacco", "Cotton", "Vegetables"],
+    "Bellary": ["Paddy", "Sunflower", "Cotton", "Groundnut", "Chilli"],
+    "Bidar": ["Soybean", "Red Gram", "Sugarcane", "Ginger"],
+    "Bijapur": ["Jowar", "Bajra", "Pomegranate", "Grapes", "Lime"],
+    "Chamarajanagar": ["Turmeric", "Banana", "Coconut", "Sugarcane"],
+    "Chikmagalur": ["Coffee", "Arecanut", "Pepper", "Cardamom"],
+    "Chikkaballapur": ["Grapes", "Mango", "Potato", "Vegetables"],
+    "Chitradurga": ["Groundnut", "Sunflower", "Onion", "Coconut"],
+    "Dakshina Kannada": ["Coconut", "Arecanut", "Paddy", "Black Pepper", "Banana"],
+    "Davangere": ["Maize", "Paddy", "Cotton", "Arecanut"],
+    "Dharwad": ["Cotton", "Chilli", "Groundnut", "Wheat"],
+    "Gadag": ["Chilli", "Onion", "Sunflower", "Cotton"],
+    "Gulbarga": ["Red Gram (Tur)", "Jowar", "Sunflower"],
+    "Hassan": ["Potato", "Coffee", "Coconut", "Pepper"],
+    "Haveri": ["Chilli", "Maize", "Cotton", "Cardamom"],
+    "Kodagu": ["Coffee", "Pepper", "Cardamom", "Orange"],
+    "Kolar": ["Tomato", "Mango", "Mulberry", "Vegetables"],
+    "Koppal": ["Paddy", "Maize", "Sunflower"],
+    "Mandya": ["Sugarcane", "Paddy", "Ragi", "Coconut"],
+    "Mysore": ["Paddy", "Tobacco", "Cotton", "Silk"],
+    "Raichur": ["Paddy", "Cotton", "Groundnut"],
+    "Ramanagara": ["Ragi", "Mango", "Coconut", "Mulberry"],
+    "Shimoga": ["Arecanut", "Paddy", "Ginger", "Vanilla"],
+    "Tumkur": ["Coconut", "Arecanut", "Ragi", "Groundnut"],
+    "Udupi": ["Paddy", "Coconut", "Arecanut", "Cashew", "Mattu Gulla"],
+    "Uttara Kannada": ["Arecanut", "Spices", "Cashew", "Vanilla"],
+    "Yadgir": ["Red Gram", "Cotton", "Groundnut"],
+    
     "Kerala": ["Rubber", "Coconut", "Pepper", "Cardamom", "Tea", "Coffee", "Tapioca"],
     "Madhya Pradesh": ["Soybean", "Wheat", "Gram", "Pulses", "Garlic", "Coriander"],
     "Maharashtra": ["Cotton", "Sugarcane", "Soybean", "Jowar", "Onion", "Grapes", "Pomegranate"],
@@ -205,9 +237,9 @@ export default function FarmerDashboard() {
     if (isNaN(numPrice)) return 'N/A'
 
     // Base price is usually per Quintal (100kg)
-    if (priceUnit === 'kg') return `₹${(numPrice / 100).toFixed(2)}/kg`
-    if (priceUnit === 'quintal') return `₹${numPrice.toLocaleString()}/q`
-    if (priceUnit === 'ton') return `₹${(numPrice * 10).toLocaleString()}/ton`
+    if (priceUnit === 'kg') return `₹${Math.round(numPrice / 100)}/kg`
+    if (priceUnit === 'quintal') return `₹${Math.round(numPrice).toLocaleString()}/q`
+    if (priceUnit === 'ton') return `₹${Math.round(numPrice * 10).toLocaleString()}/ton`
     return price
   }
 
@@ -239,191 +271,293 @@ export default function FarmerDashboard() {
   ]
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-green-50 via-white to-green-50">
+    <div className="min-h-screen bg-[#F0FDF4] font-sans selection:bg-emerald-200 selection:text-emerald-900">
       {/* Logo - Fixed in top-left corner */}
-      <div className="fixed top-6 left-6 z-50 flex items-center gap-2">
-        <Sprout className="w-8 h-8 text-green-600" />
-        <h1 className="text-2xl font-bold text-green-700">KisanSetu</h1>
+      <div className="fixed top-6 left-6 z-50 flex items-center gap-3 bg-white/90 backdrop-blur-md px-4 py-2 rounded-2xl shadow-sm border border-emerald-100/50">
+        <div className="bg-emerald-100 p-2 rounded-xl">
+          <Leaf className="w-6 h-6 text-emerald-600" />
+        </div>
+        <div>
+           <h1 className="text-xl font-bold text-emerald-950 leading-none">KisanSetu</h1>
+           <span className="text-[10px] uppercase tracking-wider text-emerald-600 font-bold">Farmer Connect</span>
+        </div>
       </div>
 
-      {/* Navigation Bar - Centered at top, sticky, transparent */}
-      <nav className="fixed top-4 left-1/2 transform -translate-x-1/2 z-40">
-        <div className="bg-white/30 backdrop-blur-md rounded-full px-6 py-2 shadow-lg border border-white/20">
-          <div className="flex gap-6 items-center">
+      {/* Navigation Bar - Centered at top, sticky */}
+      <nav className="fixed top-6 left-1/2 transform -translate-x-1/2 z-40 w-auto max-w-[90%]">
+        <div className="bg-white/80 backdrop-blur-xl rounded-2xl px-2 py-2 shadow-xl shadow-emerald-900/5 border border-white/50 ring-1 ring-black/5">
+          <div className="flex gap-1 items-center">
+            {[
+              { id: 'home', label: 'Home', icon: Home },
+              { id: 'market-prices', label: 'Market Prices', icon: BarChart3 },
+              { id: 'buyers', label: 'Find Buyers', icon: Handshake },
+              { id: 'listings', label: 'My Listings', icon: Store }
+            ].map(item => (
+              <button 
+                key={item.id}
+                onClick={() => {
+                  setActiveLink(item.id)
+                  const element = document.getElementById(item.id)
+                  if (element) element.scrollIntoView({ behavior: 'smooth' })
+                }}
+                className={`flex items-center gap-2 font-semibold transition-all duration-300 px-5 py-2.5 rounded-xl text-sm ${
+                  activeLink === item.id 
+                    ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' 
+                    : 'text-slate-600 hover:text-emerald-700 hover:bg-emerald-50/80'
+                }`}
+              >
+                <item.icon className={`w-4 h-4 ${activeLink === item.id ? 'text-emerald-100' : 'text-slate-400'}`} />
+                {item.label}
+              </button>
+            ))}
+            <div className="w-px h-8 bg-slate-200 mx-1"></div>
             <a 
-              href="#home" 
-              onClick={() => setActiveLink('home')}
-              className={`font-medium transition-all duration-300 px-3 py-2 rounded-lg ${
-                activeLink === 'home' ? 'bg-green-600 text-white' : 'text-gray-700 hover:text-green-600'
-              }`}
+               href="#"
+               title="Logout"
+               className="flex items-center justify-center w-10 h-10 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all"
             >
-              Home
-            </a>
-            <a 
-              href="#" 
-              onClick={() => setActiveLink('market-prices')}
-              className={`font-medium transition-all duration-300 px-3 py-2 rounded-lg ${
-                activeLink === 'market-prices' ? 'bg-green-600 text-white' : 'text-gray-700 hover:text-green-600'
-              }`}
-            >
-              Market Prices
-            </a>
-            <a 
-              href="#" 
-              onClick={() => setActiveLink('buyers')}
-              className={`font-medium transition-all duration-300 px-3 py-2 rounded-lg ${
-                activeLink === 'buyers' ? 'bg-green-600 text-white' : 'text-gray-700 hover:text-green-600'
-              }`}
-            >
-              Find Buyers
-            </a>
-            <a 
-              href="#" 
-              onClick={() => setActiveLink('listings')}
-              className={`font-medium transition-all duration-300 px-3 py-2 rounded-lg ${
-                activeLink === 'listings' ? 'bg-green-600 text-white' : 'text-gray-700 hover:text-green-600'
-              }`}
-            >
-              My Listings
+               <LogOut className="w-5 h-5" />
             </a>
           </div>
         </div>
       </nav>
 
       {/* Top Spacing for fixed navbar */}
-      <div className="h-20"></div>
+      <div className="h-28"></div>
 
       {/* Hero Section */}
-      <section className="relative text-white py-12 overflow-hidden" style={{backgroundImage: `url(${farmerBg})`, backgroundSize: 'cover', backgroundPosition: 'center'}}>
-        <div className="absolute inset-0 bg-black/40"></div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-5xl md:text-6xl font-bold mb-4">
-            Empowering Farmers with Real-Time Market Access
+      <section id="home" className="relative mx-4 sm:mx-6 lg:mx-8 rounded-[2.5rem] overflow-hidden shadow-2xl shadow-emerald-900/20 mb-10 group">
+        <div className="absolute inset-0 bg-stone-900">
+           <img src={farmerBg} className="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-[2s] ease-out" alt="Farmer Background" />
+        </div>
+        <div className="absolute inset-0 bg-gradient-to-r from-emerald-950/90 via-emerald-900/40 to-transparent"></div>
+        <div className="relative py-16 px-8 md:px-16 max-w-4xl">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-100 text-xs font-bold uppercase tracking-widest mb-6 backdrop-blur-md">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            Live Market Data
+          </div>
+          <h2 className="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight tracking-tight">
+            Smart Farming Starts with <br/>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-200 to-teal-400">Real-Time Decisions</span>
           </h2>
-          <p className="text-lg md:text-xl text-green-100 mb-8 max-w-2xl mx-auto">
-            Access real-time market prices, connect with buyers, and grow your farm business
+          <p className="text-lg text-emerald-100/80 mb-10 max-w-xl leading-relaxed">
+            Instantly access Mandi prices, connect with verified buyers, and maximize your harvest's value with AI-driven insights.
           </p>
-          <div className="flex gap-4 justify-center flex-wrap">
-            <button className="bg-white text-green-600 hover:bg-green-50 px-8 py-3 rounded-lg font-semibold transition">
-              Check Prices
+          <div className="flex flex-wrap gap-4">
+            <button 
+              onClick={() => document.getElementById('market-prices').scrollIntoView({ behavior: 'smooth' })}
+              className="bg-emerald-500 hover:bg-emerald-400 text-white px-8 py-4 rounded-xl font-bold transition-all shadow-lg shadow-emerald-900/20 hover:shadow-emerald-500/30 flex items-center gap-2"
+            >
+              <IndianRupee className="w-5 h-5" /> Check Prices
             </button>
-            <button className="bg-amber-600 hover:bg-amber-700 text-white px-8 py-3 rounded-lg font-semibold transition">
-              Find Buyers
+            <button 
+               onClick={() => document.getElementById('buyers').scrollIntoView({ behavior: 'smooth' })}
+               className="bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border border-white/20 px-8 py-4 rounded-xl font-bold transition-all flex items-center gap-2"
+            >
+              <Handshake className="w-5 h-5" /> Find Buyers
             </button>
           </div>
         </div>
       </section>
 
+      {/* Stats Overview */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Weather Card */}
+            <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-3xl p-6 text-white shadow-lg shadow-blue-500/20 relative overflow-hidden group">
+               <div className="relative z-10">
+                 <div className="flex justify-between items-start mb-4">
+                    <div className="bg-white/20 p-3 rounded-2xl backdrop-blur-sm">
+                        <Sun className="w-6 h-6 text-yellow-300" />
+                    </div>
+                    <span className="text-xs font-bold bg-blue-900/30 px-3 py-1 rounded-full">{userLocation || 'Karnataka'}</span>
+                 </div>
+                 <h3 className="text-3xl font-bold mb-1">28°C</h3>
+                 <p className="text-blue-100 text-sm font-medium">Sunny • Humidity: 45%</p>
+               </div>
+               <Sun className="absolute -bottom-4 -right-4 w-32 h-32 text-white/10 group-hover:rotate-12 transition-transform duration-700" />
+            </div>
+
+            {/* Trending Up */}
+            <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+                <div className="flex items-center gap-3 mb-4">
+                   <div className="p-2.5 bg-emerald-100 text-emerald-600 rounded-xl">
+                      <TrendingUp className="w-5 h-5" />
+                   </div>
+                   <div>
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Top Gainer</p>
+                      <p className="font-bold text-slate-700">Arecanut</p>
+                   </div>
+                </div>
+                <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-bold text-emerald-600">+12%</span>
+                    <span className="text-xs font-bold text-emerald-600/70">this week</span>
+                </div>
+            </div>
+
+            {/* Trending Down */}
+            <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+                <div className="flex items-center gap-3 mb-4">
+                   <div className="p-2.5 bg-red-100 text-red-600 rounded-xl">
+                      <TrendingDown className="w-5 h-5" />
+                   </div>
+                   <div>
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Top Loser</p>
+                      <p className="font-bold text-slate-700">Tomato</p>
+                   </div>
+                </div>
+                <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-bold text-red-600">-5.2%</span>
+                    <span className="text-xs font-bold text-red-600/70">correction</span>
+                </div>
+            </div>
+
+             {/* Mandi Activity */}
+            <div className="bg-emerald-900 rounded-3xl p-6 text-white relative overflow-hidden">
+                <div className="flex gap-4 items-center relative z-10">
+                   <div>
+                      <p className="text-emerald-300 text-xs font-bold uppercase tracking-wider mb-1">Live Mandis</p>
+                      <h3 className="text-4xl font-bold text-white mb-2">142</h3>
+                      <p className="text-emerald-400/80 text-xs">Active markets reporting data today</p>
+                   </div>
+                </div>
+                <div className="absolute top-0 right-0 p-4 opacity-10">
+                    <Building2 className="w-24 h-24" />
+                </div>
+            </div>
+        </div>
+      </div>
+
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid lg:grid-cols-3 gap-8 mb-12">
           {/* Left Column - Market Prices */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2" id="market-prices">
             
             {/* Header & Controls */}
             <div className="mb-8">
-              <h2 className="text-xl font-bold text-stone-700 mb-4 tracking-tight">Current Market Prices</h2>
+              <div className="flex items-center justify-between mb-6">
+                 <h2 className="text-2xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
+                    <div className="w-1 h-8 bg-emerald-500 rounded-full"></div>
+                    Current Market Prices
+                 </h2>
+                 <span className="text-xs font-semibold text-slate-400 uppercase tracking-widest bg-slate-100 px-3 py-1 rounded-full flex items-center gap-1">
+                   <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+                   Live Updates
+                 </span>
+              </div>
               
-              {userLocation && regionalCrops[userLocation] && (
-                <div className="mb-6 p-4 bg-green-50 border border-green-100 rounded-lg">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Sprout className="w-4 h-4 text-green-600" />
-                    <h3 className="text-sm font-bold text-green-800">Primary Crops in {userLocation}</h3>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {regionalCrops[userLocation].map(c => (
-                      <span key={c} className="text-xs font-medium px-2.5 py-1 bg-white border border-green-200 text-green-700 rounded-full shadow-sm">
-                        {c}
-                      </span>
+              <div className="bg-white p-5 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100">
+                {userLocation && regionalCrops[userLocation] && (
+                    <div className="mb-6 pb-6 border-b border-slate-100">
+                    <div className="flex items-center gap-2 mb-3">
+                        <MapPin className="w-4 h-4 text-emerald-600" />
+                        <h3 className="text-sm font-bold text-slate-700"> Local Priority: {userLocation}</h3>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        {regionalCrops[userLocation].map(c => (
+                        <span key={c} className="text-xs font-bold px-3 py-1.5 bg-emerald-50 border border-emerald-100/50 text-emerald-700 rounded-lg shadow-sm">
+                            {c}
+                        </span>
+                        ))}
+                    </div>
+                    </div>
+                )}
+
+                <div className="flex flex-col md:flex-row gap-4 items-center">
+                    {/* Region Filter */}
+                    <div className="relative w-full md:w-auto md:flex-1 group">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block ml-1">Region</label>
+                        <select 
+                        value={userLocation} 
+                        onChange={(e) => setUserLocation(e.target.value)} 
+                        className={`appearance-none w-full border text-slate-700 py-3.5 px-4 pr-10 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 font-semibold transition-all cursor-pointer ${userLocation ? 'bg-emerald-50/50 border-emerald-200' : 'bg-slate-50 border-slate-200 hover:border-slate-300'}`}
+                        >
+                            <option value="">Global View</option>
+                            {Object.keys(regionalCrops).sort().map(loc => (
+                            <option key={loc} value={loc}>{loc}</option>
+                            ))}
+                        </select>
+                        <div className="pointer-events-none absolute bottom-3.5 right-0 flex items-center px-4 text-slate-400 group-hover:text-emerald-500 transition-colors">
+                        <Globe className="w-4 h-4" />
+                        </div>
+                    </div>
+
+                    {/* Crop Filter */}
+                    <div className="relative w-full md:w-auto md:flex-1 group">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block ml-1">Commodity</label>
+                        <select 
+                        value={selectedCrop} 
+                        onChange={(e) => setSelectedCrop(e.target.value)} 
+                        className="appearance-none w-full bg-slate-50 border border-slate-200 text-slate-700 py-3.5 px-4 pr-10 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-semibold transition-all cursor-pointer hover:border-slate-300"
+                        >
+                            {getUniqueValues('commodity').map(crop => (
+                            <option key={crop} value={crop}>{crop === 'all' ? 'All Crops' : crop}</option>
+                            ))}
+                        </select>
+                        <div className="pointer-events-none absolute bottom-3.5 right-0 flex items-center px-4 text-slate-400 group-hover:text-emerald-500 transition-colors">
+                        <Leaf className="w-4 h-4" />
+                        </div>
+                    </div>
+
+                    {/* Market Filter */}
+                    <div className="relative w-full md:w-auto md:flex-1 group">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block ml-1">Market</label>
+                        <select 
+                        value={selectedLocation} 
+                        onChange={(e) => setSelectedLocation(e.target.value)} 
+                        className="appearance-none w-full bg-slate-50 border border-slate-200 text-slate-700 py-3.5 px-4 pr-10 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-semibold transition-all cursor-pointer hover:border-slate-300"
+                        >
+                            {getUniqueValues('district').map(loc => (
+                            <option key={loc} value={loc}>{loc === 'all' ? 'All Markets' : loc}</option>
+                            ))}
+                        </select>
+                        <div className="pointer-events-none absolute bottom-3.5 right-0 flex items-center px-4 text-slate-400 group-hover:text-emerald-500 transition-colors">
+                        <Store className="w-4 h-4" />
+                        </div>
+                    </div>
+                    
+                    {/* Unit Conversion */}
+                    <div className="w-full md:w-auto mt-6 md:mt-5 p-1 bg-slate-100 rounded-xl flex">
+                    {['kg', 'quintal', 'ton'].map(unit => (
+                        <button 
+                        key={unit}
+                        onClick={() => setPriceUnit(unit)}
+                        className={`flex-1 md:flex-none px-4 py-2 text-xs font-bold rounded-lg capitalize transition-all duration-200 ${priceUnit === unit ? 'bg-white shadow-sm text-emerald-800 ring-1 ring-black/5' : 'text-slate-500 hover:text-slate-800'}`}
+                        >
+                        {unit}
+                        </button>
                     ))}
-                  </div>
-                </div>
-              )}
-
-              <div className="flex flex-col md:flex-row gap-4">
-                 {/* My Location Priority */}
-                 <div className="relative min-w-[200px] flex-1">
-                    <select 
-                      value={userLocation} 
-                      onChange={(e) => setUserLocation(e.target.value)} 
-                      className={`appearance-none w-full border text-gray-700 py-3 px-4 pr-10 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500/50 font-medium transition-shadow cursor-pointer ${userLocation ? 'bg-green-50 border-green-500 ring-2 ring-green-100' : 'bg-[#fcf9f2] border-stone-200'}`}
-                    >
-                        <option value="">Set My Location (General Map)</option>
-                        {Object.keys(regionalCrops).sort().map(loc => (
-                          <option key={loc} value={loc}>{loc}</option>
-                        ))}
-                    </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-stone-500">
-                      <MapPin className={`w-4 h-4 ${userLocation ? 'text-green-600' : 'text-stone-400'}`} />
                     </div>
-                 </div>
-
-                 {/* Styled Select Box: Crop */}
-                 <div className="relative min-w-[200px] flex-1">
-                    <select 
-                      value={selectedCrop} 
-                      onChange={(e) => setSelectedCrop(e.target.value)} 
-                      className="appearance-none w-full bg-[#fcf9f2] border border-stone-200 text-gray-700 py-3 px-4 pr-10 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500 font-medium transition-shadow cursor-pointer"
-                    >
-                        {getUniqueValues('commodity').map(crop => (
-                          <option key={crop} value={crop}>{crop === 'all' ? 'Select Crop' : crop}</option>
-                        ))}
-                    </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-stone-500">
-                      <svg className="w-5 h-5 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
-                    </div>
-                 </div>
-
-                 {/* Styled Select Box: District */}
-                 <div className="relative min-w-[200px] flex-1">
-                    <select 
-                      value={selectedLocation} 
-                      onChange={(e) => setSelectedLocation(e.target.value)} 
-                      className="appearance-none w-full bg-[#fcf9f2] border border-stone-200 text-gray-700 py-3 px-4 pr-10 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500 font-medium transition-shadow cursor-pointer"
-                    >
-                         {getUniqueValues('district').map(loc => (
-                          <option key={loc} value={loc}>{loc === 'all' ? 'All Locations' : loc}</option>
-                        ))}
-                    </select>
-                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-stone-500">
-                      <svg className="w-5 h-5 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
-                    </div>
-                 </div>
-                 
-                 {/* Unit Conversion Toggles */}
-                  <div className="flex items-center gap-1 bg-stone-100 p-1.5 rounded-lg border border-stone-200 md:ml-auto">
-                   {['kg', 'quintal', 'ton'].map(unit => (
-                     <button 
-                       key={unit}
-                       onClick={() => setPriceUnit(unit)}
-                       className={`px-3 py-1.5 text-xs font-bold rounded-md capitalize transition-all duration-200 ${priceUnit === unit ? 'bg-white shadow-sm text-green-800 ring-1 ring-black/5' : 'text-stone-500 hover:text-stone-800 hover:bg-stone-200/50'}`}
-                     >
-                       {unit}
-                     </button>
-                   ))}
                 </div>
               </div>
             </div>
 
             {/* Cards Grid - 3 Column Layout */}
-            <div className="h-[800px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-stone-300 scrollbar-track-transparent">
+            <div className="h-[800px] overflow-y-auto pr-2 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-emerald-200 hover:scrollbar-thumb-emerald-300 transition-colors">
             {loading ? (
-                <div className="py-20 text-center">
-                    <RefreshCw className="animate-spin h-10 w-10 mx-auto text-green-600 mb-4 opacity-50"/>
-                    <p className="text-stone-500 font-medium animate-pulse">Fetching latest market rates...</p>
+                <div className="py-32 text-center">
+                    <div className="relative w-16 h-16 mx-auto mb-6">
+                       <div className="absolute inset-0 border-4 border-emerald-100 rounded-full"></div>
+                       <div className="absolute inset-0 border-4 border-emerald-500 rounded-full border-t-transparent animate-spin"></div>
+                    </div>
+                    <p className="text-slate-500 font-bold animate-pulse tracking-wide">Fetching latest market rates...</p>
                 </div>
             ) : activeCommodity ? (
               /* Detail View for a Specific Commodity */
-              <div>
+              <div className="animate-in fade-in duration-500">
                 <button 
                   onClick={() => setActiveCommodity(null)}
-                  className="mb-6 flex items-center gap-2 text-green-700 font-bold hover:bg-green-50 px-3 py-1.5 rounded-lg transition-colors"
+                  className="mb-8 flex items-center gap-2 text-slate-500 font-bold hover:text-emerald-600 hover:bg-emerald-50 px-4 py-2 rounded-xl transition-all group"
                 >
-                  <ArrowLeft className="w-5 h-5" /> Back to All Crops
+                  <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" /> Back to Dashboard
                 </button>
-                <div className="mb-6 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 border-b border-stone-100 pb-6">
-                   <div className="flex items-center gap-4">
-                     <div className="w-16 h-16 rounded-xl overflow-hidden shadow-sm border border-stone-200">
+                <div className="mb-8 flex flex-col sm:flex-row sm:items-center gap-6 p-6 bg-white rounded-3xl shadow-lg shadow-emerald-900/5 border border-emerald-50 relative overflow-hidden">
+                   <div className="absolute top-0 right-0 p-3 opacity-10">
+                      <Sprout className="w-32 h-32 text-emerald-900" />
+                   </div>
+                   <div className="relative flex items-center gap-5">
+                     <div className="w-20 h-20 rounded-2xl overflow-hidden shadow-md ring-4 ring-white border border-slate-100">
                         <img 
                           src={getCropImage(activeCommodity)} 
                           className="w-full h-full object-cover" 
@@ -432,47 +566,50 @@ export default function FarmerDashboard() {
                         />
                      </div>
                      <div>
-                       <h3 className="text-2xl font-bold text-stone-800">{activeCommodity}</h3>
-                       <p className="text-stone-500 text-sm font-medium">Market Prices across selected regions</p>
+                       <h3 className="text-3xl font-bold text-slate-800 tracking-tight mb-1">{activeCommodity}</h3>
+                       <p className="text-slate-500 font-medium flex items-center gap-2">
+                         <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                         Market Intelligence Report
+                       </p>
                      </div>
                    </div>
-                   <span className="px-3 py-1 bg-green-100 text-green-800 text-sm font-bold rounded-full self-start sm:self-center">
-                      {filteredPrices.filter(i => i.commodity === activeCommodity).length} Listings Found
-                   </span>
+                   <div className="sm:ml-auto flex items-center gap-3">
+                     <div className="px-5 py-3 bg-emerald-50 rounded-2xl border border-emerald-100">
+                        <p className="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-0.5">Listings</p>
+                        <p className="text-2xl font-bold text-emerald-900 leading-none">{filteredPrices.filter(i => i.commodity === activeCommodity).length}</p>
+                     </div>
+                   </div>
                 </div>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                   {filteredPrices.filter(c => c.commodity === activeCommodity).map((crop, index) => (
-                    <div key={index} className="bg-white rounded-xl shadow-sm border border-stone-100 flex flex-col group h-full hover:shadow-md transition-all">
-                        <div className="p-5 flex flex-col h-full">
-                           <div className="flex justify-between items-start mb-4">
-                             <div>
-                               <div className="flex items-center gap-2 mb-1">
-                                  <MapPin className="w-3.5 h-3.5 text-stone-400" />
-                                  <span className="text-xs font-bold text-stone-500 uppercase tracking-wide">{crop.district}</span>
-                               </div>
-                               <h4 className="font-bold text-stone-800 text-lg leading-tight">{crop.market}</h4>
-                             </div>
-                             <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 bg-green-50 text-green-700 rounded-lg border border-green-100">
-                               {crop.variety}
-                             </span>
-                           </div>
-                           
-                           <div className="mt-auto pt-4 border-t border-stone-50">
-                              <div className="flex items-end justify-between">
-                                <div>
-                                  <p className="text-xs text-stone-400 font-medium mb-0.5">Modal Price</p>
-                                  <div className="flex items-baseline gap-1">
-                                     <span className="text-2xl font-bold text-green-700">{formatPrice(crop.modal_price).split('/')[0]}</span>
-                                     <span className="text-xs text-stone-500">/{priceUnit}</span>
-                                  </div>
+                    <div key={index} className="bg-white rounded-2xl p-5 shadow-sm hover:shadow-xl hover:shadow-emerald-900/10 border border-slate-100 hover:border-emerald-200 transition-all duration-300 group">
+                        <div className="flex justify-between items-start mb-4">
+                            <div className="bg-slate-50 p-2 rounded-xl group-hover:bg-emerald-50 transition-colors">
+                            <MapPin className="w-5 h-5 text-slate-400 group-hover:text-emerald-500 transition-colors" />
+                            </div>
+                            <span className="text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 bg-slate-50 text-slate-600 rounded-lg group-hover:bg-emerald-100 group-hover:text-emerald-800 transition-colors">
+                                {crop.variety}
+                            </span>
+                        </div>
+                        
+                        <div className="mb-4">
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">{crop.district}</p>
+                            <h4 className="font-bold text-slate-800 text-lg leading-tight line-clamp-1" title={crop.market}>{crop.market}</h4>
+                        </div>
+                        
+                        <div className="pt-4 border-t border-slate-50 flex items-end justify-between">
+                            <div>
+                                <p className="text-xs text-slate-400 font-bold mb-1">Current Price</p>
+                                <div className="flex items-baseline gap-1">
+                                    <span className="text-2xl font-bold text-emerald-700">{formatPrice(crop.modal_price).split('/')[0]}</span>
+                                    <span className="text-xs font-bold text-slate-400">/{priceUnit}</span>
                                 </div>
-                                <div className="text-right">
-                                   <p className="text-[10px] text-stone-400">Max Price</p>
-                                   <p className="text-sm font-semibold text-stone-600">{formatPrice(crop.max_price).split('/')[0]}</p>
-                                </div>
-                              </div>
-                           </div>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-[10px] text-slate-400 font-medium mb-0.5">Max</p>
+                                <p className="text-sm font-bold text-slate-600">{formatPrice(crop.max_price).split('/')[0]}</p>
+                            </div>
                         </div>
                     </div>
                   ))}
@@ -480,7 +617,7 @@ export default function FarmerDashboard() {
               </div>
             ) : (
               /* Collection View: Unique Commodities */
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pb-20">
                 {[...new Set(filteredPrices.map(item => item.commodity))]
                   .map((commodityName, index) => {
                     const count = filteredPrices.filter(p => p.commodity === commodityName).length
@@ -491,10 +628,10 @@ export default function FarmerDashboard() {
                     <div 
                       key={index} 
                       onClick={() => setActiveCommodity(commodityName)}
-                      className="bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.06)] overflow-hidden hover:shadow-[0_8px_24px_rgba(0,0,0,0.12)] hover:-translate-y-1 transition-all duration-300 border border-stone-100 flex flex-col group h-full cursor-pointer relative"
+                      className="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-2xl hover:shadow-emerald-900/10 hover:-translate-y-1 transition-all duration-300 border border-slate-100 flex flex-col group cursor-pointer relative"
                     >
                       {/* Card Image */}
-                      <div className="h-48 w-full relative overflow-hidden bg-stone-100">
+                      <div className="h-56 w-full relative overflow-hidden bg-slate-100">
                         <img 
                           src={getCropImage(commodityName)} 
                           alt={commodityName}
@@ -505,27 +642,27 @@ export default function FarmerDashboard() {
                             e.target.src = 'https://placehold.co/600x400?text=No+Image'; 
                           }}
                         />
-                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-90"></div>
+                         <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent"></div>
                          
                          {/* Overlay Content */}
-                         <div className="absolute bottom-0 left-0 p-5 w-full">
-                            <h3 className="text-2xl font-bold text-white mb-2 leading-tight group-hover:text-green-300 transition-colors">{commodityName}</h3>
+                         <div className="absolute bottom-0 left-0 p-6 w-full">
+                            <h3 className="text-2xl font-bold text-white mb-2 leading-tight drop-shadow-md group-hover:text-emerald-300 transition-colors">{commodityName}</h3>
                             <div className="flex items-center gap-3">
-                               <span className="flex items-center gap-1.5 text-white/90 text-sm font-medium bg-white/20 px-2.5 py-1 rounded-lg backdrop-blur-sm border border-white/10">
-                                  <Layers className="w-3.5 h-3.5" /> {count} Market{count !== 1 ? 's' : ''}
+                               <span className="flex items-center gap-1.5 text-white/90 text-[10px] font-bold uppercase tracking-wider bg-white/20 px-3 py-1.5 rounded-lg backdrop-blur-md border border-white/10">
+                                  <Building2 className="w-3 h-3" /> {count} Market{count !== 1 ? 's' : ''}
                                </span>
                             </div>
                          </div>
                       </div>
 
                       {/* Card Body - Footer Stats */}
-                      <div className="p-4 bg-white border-t border-stone-100 flex justify-between items-center">
+                      <div className="p-5 flex justify-between items-center bg-white">
                           <div>
-                            <p className="text-xs text-stone-400 font-bold uppercase tracking-wider mb-0.5">Avg Price</p>
-                            <p className="text-lg font-bold text-stone-700">{formatPrice(avgPrice).split('/')[0]} <span className="text-xs font-normal text-stone-400">/{priceUnit}</span></p>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Avg Market Price</p>
+                            <p className="text-xl font-bold text-slate-700 group-hover:text-emerald-600 transition-colors">{formatPrice(avgPrice).split('/')[0]} <span className="text-xs font-semibold text-slate-400">/{priceUnit}</span></p>
                           </div>
-                          <div className="h-8 w-8 rounded-full bg-green-50 flex items-center justify-center group-hover:bg-green-600 transition-colors">
-                            <ArrowLeft className="w-4 h-4 text-green-600 group-hover:text-white rotate-180 transition-colors" />
+                          <div className="h-10 w-10 rounded-full bg-slate-50 flex items-center justify-center group-hover:bg-emerald-500 transition-all duration-300">
+                            <ArrowLeft className="w-5 h-5 text-slate-400 group-hover:text-white rotate-180 transition-colors" />
                           </div>
                       </div>
                     </div>
@@ -536,56 +673,81 @@ export default function FarmerDashboard() {
 
             {/* Empty State */}
             {!loading && filteredPrices.length === 0 && (
-                <div className="col-span-full text-center py-20 bg-[#f9f9f9] rounded-xl border-2 border-dashed border-stone-200">
-                        <Filter className="h-10 w-10 mx-auto text-stone-300 mb-3"/>
-                        <p className="text-stone-500 font-medium">No prices found for standard crops.</p>
-                        <button onClick={() => {setSelectedCrop('all'); setSelectedLocation('all')}} className="mt-2 text-sm text-green-600 font-semibold hover:underline">Clear Filters</button>
+                <div className="col-span-full flex flex-col items-center justify-center py-20 bg-slate-50/50 rounded-3xl border-2 border-dashed border-slate-200">
+                        <div className="bg-white p-4 rounded-full shadow-sm mb-4">
+                            <Filter className="h-8 w-8 text-slate-300"/>
+                        </div>
+                        <p className="text-slate-500 font-medium mb-2">No prices found for standard crops.</p>
+                        <button onClick={() => {setSelectedCrop('all'); setSelectedLocation('all')}} className="text-sm text-emerald-600 font-bold hover:text-emerald-700 transition-colors">Clear All Filters</button>
                     </div>
             )}
             </div>
           </div>
 
           {/* Right Column - Buyers */}
-          <div>
-            <div className="bg-white rounded-2xl shadow-lg p-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Buyers & Offers Near You</h2>
+          <div id="buyers">
+            <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 p-6 border border-slate-100 sticky top-24">
+              <div className="flex items-center justify-between mb-6">
+                 <h2 className="text-xl font-bold text-slate-800">Verified Buyers</h2>
+                 <a href="#" className="text-xs font-bold text-emerald-600 hover:underline">View All</a>
+              </div>
 
               <div className="space-y-4">
                 {buyers.map((buyer) => (
-                  <div key={buyer.id} className="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-200 rounded-xl p-5 hover:shadow-md transition-all">
-                    <h3 className="font-bold text-gray-900 mb-2">{buyer.name}</h3>
-                    <p className="text-sm text-gray-700 mb-3">{buyer.requirement}</p>
-                    <div className="flex items-center gap-2 text-xs text-gray-600 mb-4">
-                      <span>📍 {buyer.location}</span>
+                  <div key={buyer.id} className="group bg-slate-50 border border-slate-100 rounded-2xl p-5 hover:bg-emerald-50 hover:border-emerald-100 hover:shadow-md transition-all duration-300 cursor-pointer">
+                    <div className="flex justify-between items-start mb-2">
+                       <h3 className="font-bold text-slate-800 group-hover:text-emerald-800 transition-colors">{buyer.name}</h3>
+                       <span className="bg-white text-[10px] font-bold px-2 py-1 rounded-lg border border-slate-200 text-slate-500 group-hover:border-emerald-200 group-hover:text-emerald-600">NEW</span>
                     </div>
-                    <button className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded-lg transition">
-                      View Details
-                    </button>
+                    <p className="text-sm text-slate-600 mb-4 leading-relaxed">{buyer.requirement}</p>
+                    
+                    <div className="flex items-center justify-between mt-auto">
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-slate-400 group-hover:text-emerald-600/70">
+                        <MapPin className="w-3.5 h-3.5" />
+                        <span>{buyer.location}</span>
+                        </div>
+                        <button className="bg-white text-slate-700 border border-slate-200 hover:bg-emerald-600 hover:border-emerald-600 hover:text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-sm">
+                        Connect
+                        </button>
+                    </div>
                   </div>
                 ))}
+              </div>
+              
+              <div className="mt-6 p-4 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl text-white text-center">
+                  <p className="font-bold mb-2">Want to sell directly?</p>
+                  <button className="w-full bg-white text-emerald-600 font-bold py-3 rounded-xl hover:bg-emerald-50 transition shadow-lg shadow-emerald-900/20">
+                    List Your Produce
+                  </button>
               </div>
             </div>
           </div>
         </div>
 
         {/* Bottom Action Cards */}
-        <div className="grid md:grid-cols-2 gap-8">
-          <div className="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-2xl shadow-lg p-8 hover:shadow-xl transition-all cursor-pointer">
-            <div className="flex items-center gap-4">
-              <Tractor className="w-16 h-16" />
+        <div className="grid md:grid-cols-2 gap-8 mb-12">
+          <div className="group relative overflow-hidden bg-white rounded-3xl p-8 shadow-lg shadow-emerald-900/5 border border-emerald-100/50 hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-50 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-700"></div>
+            <div className="relative flex items-center gap-6">
+              <div className="w-20 h-20 bg-emerald-100 rounded-2xl flex items-center justify-center text-emerald-600 shadow-inner group-hover:scale-110 transition-transform">
+                 <Tractor className="w-10 h-10" />
+              </div>
               <div>
-                <h3 className="text-2xl font-bold mb-2">Post Your Produce</h3>
-                <p className="text-green-100">List your crops for sale and reach buyers instantly</p>
+                <h3 className="text-2xl font-bold text-slate-800 mb-2 group-hover:text-emerald-700 transition-colors">Farm Management</h3>
+                <p className="text-slate-500 font-medium">Track your crop cycles, expenses, and yield history in one place.</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-amber-600 to-orange-600 text-white rounded-2xl shadow-lg p-8 hover:shadow-xl transition-all cursor-pointer">
-            <div className="flex items-center gap-4">
-              <Newspaper className="w-16 h-16" />
+          <div className="group relative overflow-hidden bg-white rounded-3xl p-8 shadow-lg shadow-orange-900/5 border border-orange-100/50 hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer">
+             <div className="absolute top-0 right-0 w-64 h-64 bg-orange-50 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-700"></div>
+            <div className="relative flex items-center gap-6">
+              <div className="w-20 h-20 bg-orange-100 rounded-2xl flex items-center justify-center text-orange-600 shadow-inner group-hover:scale-110 transition-transform">
+                 <Newspaper className="w-10 h-10" />
+              </div>
               <div>
-                <h3 className="text-2xl font-bold mb-2">Market Trends & News</h3>
-                <p className="text-orange-100">Stay updated with latest agricultural trends</p>
+                <h3 className="text-2xl font-bold text-slate-800 mb-2 group-hover:text-orange-700 transition-colors">Agri-News & Trends</h3>
+                <p className="text-slate-500 font-medium">Daily updates on government schemes, weather, and market forecasts.</p>
               </div>
             </div>
           </div>

@@ -1,8 +1,20 @@
-import { Sprout, Shield, ShoppingCart } from 'lucide-react'
+import { 
+  Sprout, 
+  Shield, 
+  ShoppingCart, 
+  Leaf, 
+  Users, 
+  TrendingUp, 
+  Sun,
+  ArrowRight,
+  HeartHandshake,
+  Truck,
+  Building2
+} from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 
 export default function HomePage() {
-  const [activeLink, setActiveLink] = useState('')
+  const [activeLink, setActiveLink] = useState('home')
   const canvasRef = useRef(null)
   const mousePos = useRef({ x: 0, y: 0 })
   const particles = useRef([])
@@ -12,8 +24,14 @@ export default function HomePage() {
     if (!canvas) return
 
     const ctx = canvas.getContext('2d')
-    canvas.width = window.innerWidth
-    canvas.height = window.innerHeight
+    let animationFrameId
+
+    const resizeCanvas = () => {
+      canvas.width = window.innerWidth
+      canvas.height = window.innerHeight
+    }
+    resizeCanvas()
+    window.addEventListener('resize', resizeCanvas)
 
     // Initialize particles
     particles.current = Array.from({ length: 200}, () => ({
@@ -28,13 +46,14 @@ export default function HomePage() {
     const handleMouseMove = (e) => {
       mousePos.current = { x: e.clientX, y: e.clientY }
     }
+    window.addEventListener('mousemove', handleMouseMove)
 
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height)
       ctx.fillStyle = 'rgba(16, 185, 129, 0.05)'
 
       particles.current.forEach((particle, index) => {
-        // Move towards mouse position
+        // Move towards mouse position (Attraction)
         const dx = mousePos.current.x - particle.x
         const dy = mousePos.current.y - particle.y
         const distance = Math.sqrt(dx * dx + dy * dy)
@@ -80,35 +99,30 @@ export default function HomePage() {
       })
 
       ctx.globalAlpha = 1
-      requestAnimationFrame(animate)
+      animationFrameId = requestAnimationFrame(animate)
     }
-
-    window.addEventListener('mousemove', handleMouseMove)
     animate()
 
-    const handleResize = () => {
-      canvas.width = window.innerWidth
-      canvas.height = window.innerHeight
-    }
-
-    window.addEventListener('resize', handleResize)
-
     return () => {
+      window.removeEventListener('resize', resizeCanvas)
       window.removeEventListener('mousemove', handleMouseMove)
-      window.removeEventListener('resize', handleResize)
+      cancelAnimationFrame(animationFrameId)
     }
   }, [])
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-green-50 via-white to-green-50 relative overflow-hidden scroll-smooth">
+    <div className="min-h-screen bg-slate-50 relative overflow-hidden font-sans text-slate-900 selection:bg-emerald-200 selection:text-emerald-900">
       
+      {/* Background Canvas */}
       <canvas 
         ref={canvasRef}
         className="fixed top-0 left-0 w-full h-full z-0 pointer-events-none"
       />
-      <div className="fixed top-6 left-6 z-50 flex items-center gap-2">
-        <Sprout className="w-8 h-8 text-green-600" />
-        <h2 className="text-2xl font-bold text-green-700">KisanSetu</h2>
+
+      {/* Glassmorphic Navigation */}
+      <div className="fixed top-2 left-4 z-50 flex items-center gap-2">
+        <Sprout className="w-8 h-8 text-emerald-600" />
+        <h2 className="text-2xl font-bold text-emerald-700">KisanSetu</h2>
       </div>
 
       <nav className="fixed top-4 left-1/2 transform -translate-x-1/2 z-40">
@@ -160,46 +174,62 @@ export default function HomePage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden py-12 md:py-20 z-10">
-        <div className="absolute top-0 right-0 -mr-40 -mt-40 w-80 h-80 bg-green-100 rounded-full opacity-50"></div>
-        <div className="absolute bottom-0 left-0 -ml-40 -mb-40 w-80 h-80 bg-emerald-100 rounded-full opacity-50"></div>
-
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="mb-8 inline-block">
-           
+      <section id="home" className="relative pt-20 pb-16 lg:pt-28 lg:pb-24 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-100 rounded-full px-4 py-1.5 mb-8 animate-[fade-in-up_1s_ease-out]">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span className="text-xs font-semibold text-emerald-700 uppercase tracking-wide">Empowering Agriculture</span>
           </div>
 
-          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-transparent bg-linear-to-r from-green-600 to-emerald-600 bg-clip-text mb-6">
-            KisanSetu
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-slate-900 mb-6 tracking-tight leading-tight">
+            Cultivating a <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-600">
+              Better Future
+            </span>
           </h1>
 
-          <p className="text-xl md:text-2xl text-gray-700 mb-8 max-w-2xl mx-auto leading-relaxed font-medium">
-            A Digital Bridge Between Farmers and Markets
+          <p className="text-lg md:text-xl text-slate-600 mb-10 max-w-2xl mx-auto leading-relaxed">
+            Directly connecting farmers with modern markets. Fair prices, transparent supply chains, and real-time insights for a thriving agricultural ecosystem.
           </p>
 
-          <p className="text-gray-600 text-lg mb-12 max-w-3xl mx-auto leading-relaxed">
-            Connecting agricultural communities with opportunities. Empower farmers, serve customers, manage operations seamlessly with our modern platform.
-          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-20">
+             <a href="#login-section" className="group bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all shadow-xl shadow-emerald-200 hover:shadow-emerald-300 flex items-center gap-2">
+               Connect Now
+               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+             </a>
+             <button className="group bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-8 py-4 rounded-xl font-semibold text-lg transition-all hover:border-emerald-200 flex items-center gap-2">
+               Learn More
+             </button>
+          </div>
 
-          <div className="flex flex-wrap gap-6 justify-center items-center mb-12">
-            <div className="bg-white/80 backdrop-blur-sm rounded-xl p-8 shadow-xl border border-green-100 hover:shadow-2xl transition-all duration-500 hover:scale-105 animate-[float_2s_ease-in-out]">
-              <div className="text-5xl font-bold text-green-600 mb-2 animate-[pulse_2s_ease-in-out_infinite]">10K+</div>
-              <div className="text-gray-700 text-sm font-medium">Active Farmers</div>
-            </div>
-            <div className="bg-white/80 backdrop-blur-sm rounded-xl p-8 shadow-xl border border-green-100 hover:shadow-2xl transition-all duration-500 hover:scale-105 animate-[float_2s_ease-in-out_0.3s]">
-              <div className="text-5xl font-bold text-green-600 mb-2 animate-[pulse_2s_ease-in-out_infinite_0.3s]">500+</div>
-              <div className="text-gray-700 text-sm font-medium">Verified Buyers</div>
-            </div>
-            <div className="bg-white/80 backdrop-blur-sm rounded-xl p-8 shadow-xl border border-green-100 hover:shadow-2xl transition-all duration-500 hover:scale-105 animate-[float_2s_ease-in-out_0.6s]">
-              <div className="text-5xl font-bold text-green-600 mb-2 animate-[pulse_2s_ease-in-out_infinite_0.6s]">₹50Cr+</div>
-              <div className="text-gray-700 text-sm font-medium">Transactions</div>
-            </div>
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+            {[
+              { label: 'Active Farmers', value: '10,000+', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
+              { label: 'Weekly Volume', value: '500 Tons', icon: TrendingUp, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+              { label: 'Partner Mandis', value: '120+', icon: Building2, color: 'text-amber-600', bg: 'bg-amber-50' },
+            ].map((stat, idx) => (
+              <div key={idx} className="bg-white rounded-2xl p-8 border border-slate-100 shadow-sm hover:shadow-md transition-all">
+                <div className="flex items-center justify-between pointer-events-none">
+                  <div className="text-left">
+                    <p className="text-4xl font-bold text-slate-900 mb-2">{stat.value}</p>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">{stat.label}</p>
+                  </div>
+                  <div className={`p-4 rounded-2xl ${stat.bg}`}>
+                    <stat.icon className={`w-8 h-8 ${stat.color}`} strokeWidth={1.5} />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* Login Cards Section */}
-      <section className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 z-10">
+      <section id="login-section" className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 z-10">
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
             Select Your Role
@@ -283,77 +313,111 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section id="features" className="py-12 bg-white z-10 relative">
+      {/* Features Grid */}
+      <section id="features" className="py-24 z-10 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Why Choose KisanSetu?
-            </h2>
+           <div className="text-center mb-16">
+            <span className="text-emerald-600 font-semibold tracking-wider uppercase text-sm">Why Choose Us</span>
+            <h2 className="mt-2 text-3xl md:text-4xl font-bold text-slate-900">Revolutionizing the Supply Chain</h2>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="p-8 bg-green-50 rounded-xl border border-green-200 hover:shadow-lg transition-shadow">
-              <h3 className="text-xl font-bold text-green-700 mb-3">
-                Direct Connection
-              </h3>
-              <p className="text-gray-600">
-                Connect farmers directly with customers and reduce middlemen
-              </p>
-            </div>
-            <div className="p-8 bg-green-50 rounded-xl border border-green-200 hover:shadow-lg transition-shadow">
-              <h3 className="text-xl font-bold text-green-700 mb-3">
-                Fair Pricing
-              </h3>
-              <p className="text-gray-600">
-                Transparent pricing system that benefits both farmers and buyers
-              </p>
-            </div>
-            <div className="p-8 bg-green-50 rounded-xl border border-green-200 hover:shadow-lg transition-shadow">
-              <h3 className="text-xl font-bold text-green-700 mb-3">
-                Easy Management
-              </h3>
-              <p className="text-gray-600">
-                Simplified platform for managing crops, orders, and deliveries
-              </p>
-            </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[
+              { 
+                icon: HeartHandshake, 
+                title: "Fair Trade Practices", 
+                desc: "We ensure every farmer gets their due worth through our transparent bidding system." 
+              },
+              { 
+                icon: Truck, 
+                title: "Smart Logistics", 
+                desc: "Integrated logistics support to get produce from farm to fork faster and fresher." 
+              },
+              { 
+                icon: Sun, 
+                title: "Weather Insights", 
+                desc: "Real-time weather data to help farmers plan their harvest and protect crops." 
+              },
+              { 
+                icon: Shield, 
+                title: "Secure Payments", 
+                desc: "Escrow-protected payments ensure safety for both buyers and sellers." 
+              },
+              { 
+                icon: TrendingUp, 
+                title: "Market Analysis", 
+                desc: "Data-driven insights on crop demand and pricing trends." 
+              },
+              { 
+                icon: Sprout, 
+                title: "Sustainable Growth", 
+                desc: "Promoting eco-friendly farming practices for a better tomorrow." 
+              }
+            ].map((feature, idx) => (
+              <div key={idx} className="flex gap-4 p-6 rounded-2xl hover:bg-white hover:shadow-lg transition-all duration-300 border border-transparent hover:border-slate-100">
+                <div className="flex-shrink-0">
+                  <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-600">
+                    <feature.icon className="w-6 h-6" />
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-slate-800 mb-2">{feature.title}</h3>
+                  <p className="text-slate-500 leading-relaxed">{feature.desc}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer id="contact" className="bg-linear-to-r from-green-700 to-emerald-700 text-white py-8 mt-8 z-10 relative">
+      <footer id="contact" className="bg-[#0f172a] text-slate-300 py-16 z-10 relative mt-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-3 gap-8 mb-8">
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <Sprout className="w-6 h-6" />
-                <span className="text-xl font-bold">KisanSetu</span>
+          <div className="grid md:grid-cols-4 gap-12 mb-12">
+            <div className="col-span-1 md:col-span-2">
+              <div className="flex items-center gap-2 mb-6">
+                <Leaf className="w-8 h-8 text-emerald-500" />
+                <span className="text-2xl font-bold text-white">KisanSetu</span>
               </div>
-              <p className="text-green-100">
-                Bridging the gap between farmers and markets.
+              <p className="text-slate-400 max-w-sm leading-relaxed mb-6">
+                Bridging the gap between India's hardworking farmers and the modern marketplace. Technology for a greener, wealthier future.
               </p>
+              <div className="flex gap-4">
+                {/* Social placeholders */}
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-emerald-600 transition-colors cursor-pointer">
+                    <div className="w-5 h-5 bg-current rounded-sm"></div>
+                  </div>
+                ))}
+              </div>
             </div>
+            
             <div>
-              <h4 className="font-semibold mb-4">Quick Links</h4>
-              <ul className="space-y-2 text-green-100">
-                <li><a href="#about" className="hover:text-white transition">About Us</a></li>
-                <li><a href="#features" className="hover:text-white transition">Features</a></li>
-                <li><a href="#contact" className="hover:text-white transition">Contact</a></li>
+              <h4 className="text-white font-semibold text-lg mb-6">Platform</h4>
+              <ul className="space-y-4">
+                <li><a href="#" className="hover:text-emerald-400 transition-colors">Find Produce</a></li>
+                <li><a href="#" className="hover:text-emerald-400 transition-colors">Sell Crops</a></li>
+                <li><a href="#" className="hover:text-emerald-400 transition-colors">Market Prices</a></li>
+                <li><a href="#" className="hover:text-emerald-400 transition-colors">Logistics</a></li>
               </ul>
             </div>
+
             <div>
-              <h4 className="font-semibold mb-4">Support</h4>
-              <ul className="space-y-2 text-green-100">
-                <li><a href="#" className="hover:text-white transition">Help Center</a></li>
-                <li><a href="#" className="hover:text-white transition">Privacy Policy</a></li>
-                <li><a href="#" className="hover:text-white transition">Terms of Service</a></li>
+              <h4 className="text-white font-semibold text-lg mb-6">Support</h4>
+              <ul className="space-y-4">
+                <li><a href="#" className="hover:text-emerald-400 transition-colors">Help Center</a></li>
+                <li><a href="#" className="hover:text-emerald-400 transition-colors">Safety Guidelines</a></li>
+                <li><a href="#" className="hover:text-emerald-400 transition-colors">Terms of Service</a></li>
+                <li><a href="#" className="hover:text-emerald-400 transition-colors">Privacy Policy</a></li>
               </ul>
             </div>
           </div>
-
-          <div className="border-t border-green-600 pt-8 text-center text-green-100">
-            <p>&copy; 2026 KisanSetu. All rights reserved. Building a better agricultural future.</p>
+          
+          <div className="pt-8 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4">
+            <p className="text-slate-500 text-sm">© 2026 KisanSetu. All rights reserved.</p>
+            <p className="text-slate-500 text-sm flex items-center gap-1">
+              Made with <span className="text-red-500">♥</span> for Indian Agriculture
+            </p>
           </div>
         </div>
       </footer>
