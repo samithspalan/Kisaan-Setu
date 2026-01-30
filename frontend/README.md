@@ -1,16 +1,104 @@
-# React + Vite
+# KisanSetu 🌾
+*A Digital Bridge Between Farmers and Markets*
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+---
 
-Currently, two official plugins are available:
+## Problem Statement ID
+**CS03AE**
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
 
-## React Compiler
+## Team Name
+**Stack OverLords**
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## College Name
+**Sahyadri College of Engineering and Management, Mangalore**
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+---
+
+## Problem Statement
+
+Farmers often lack access to real-time market intelligence and direct market access, which leads to dependency on intermediaries, delayed price information, and reduced profit margins. Market prices for agricultural produce vary frequently across regions and marketplaces, but farmers typically rely on outdated or informal sources to make selling decisions. This information gap prevents them from choosing the right market, timing their sales effectively, and negotiating fair prices.
+
+Additionally, the absence of a unified digital platform limits farmers’ ability to connect directly with buyers, forcing them to depend on middlemen who control pricing and market access. This results in income instability, limited transparency, and reduced financial empowerment for farmers. Addressing these challenges requires a system that provides real-time market data, transparent price discovery, and direct access to markets, enabling farmers to make informed decisions and improve their economic outcomes.
+
+---
+
+## Proposed Solution
+
+KisanSetu is a web-based platform designed to provide farmers with real-time market intelligence and direct access to buyers through a single unified system. The platform displays updated crop prices across nearby markets, shows short-term price trends, and highlights buyer demand to help farmers decide the right time and place to sell their produce.
+
+In addition to market insights, KisanSetu enables direct farmer-to-buyer interaction. Farmers can list their crops, receive price offers from buyers, and accept the most profitable deal without relying on intermediaries. The system also provides simple, explainable recommendations such as *Sell Now*, *Hold*, or *High Demand*, based on recent price trends and buyer activity, supporting transparent and informed decision-making.
+
+---
+
+## Innovation & Creativity
+
+KisanSetu stands out by focusing on action-based market intelligence rather than just displaying raw price data. The platform not only informs farmers about market conditions but also guides them on what action to take next using explainable logic.
+
+Key innovative aspects include:
+- Decision-oriented recommendations instead of static price listings  
+- Direct digital bridge between farmers and buyers  
+- Transparent and explainable insights rather than black-box predictions  
+- Farmer-first design focused on simplicity and trust  
+
+This approach transforms KisanSetu into a decision-support and empowerment platform for farmers.
+
+---
+
+## Technical Complexity & Stack
+
+### Programming Languages
+- JavaScript
+
+### Frameworks / Libraries
+- React (Vite)
+- Node.js
+- Express.js
+
+### Databases
+- MongoDB
+
+### APIs / Data Sources
+- Market price APIs or mock real-time data sources  
+- Buyer demand data generated within the platform  
+
+### Tools & Platforms
+- Git & GitHub  
+- VS Code  
+- Postman  
+
+---
+
+## Usability & Impact
+
+### Users
+- **Farmers:** View real-time prices, trends, recommendations, and sell crops directly  
+- **Buyers:** Browse crop listings, place offers, and connect with farmers  
+
+### Impact
+- Reduces dependency on middlemen  
+- Improves price transparency and trust  
+- Enables informed selling decisions  
+- Enhances income stability and financial empowerment for farmers  
+
+---
+
+## Setup Instructions
+
+### Prerequisites
+- Node.js  
+- npm  
+- MongoDB  
+- Git  
+
+---
+
+### Installation
+
+Clone the repository:
+```bash
+git clone <repository-url>
+cd project-root
