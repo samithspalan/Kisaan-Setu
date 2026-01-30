@@ -1,22 +1,74 @@
-import { Sprout, Home, TrendingUp, Users, LogOut, Bell, User, Tractor, Newspaper } from 'lucide-react'
-import { useState } from 'react'
+import { Sprout, Home, TrendingUp, Users, LogOut, Bell, User, Tractor, Newspaper, Filter, RefreshCw } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import axios from 'axios'
 
 export default function FarmerDashboard() {
   const [selectedCrop, setSelectedCrop] = useState('all')
-  const [selectedLocation, setSelectedLocation] = useState('mangalore')
+  const [selectedLocation, setSelectedLocation] = useState('all')
   const [activeLink, setActiveLink] = useState('market-prices')
+  const [marketPrices, setMarketPrices] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [priceUnit, setPriceUnit] = useState('kg') // kg, quintal, ton
 
-  // Dummy market prices data
-  const marketPrices = [
-    { id: 1, name: 'Coconut', price: '₹85/kg', market: 'Mangalore Market', updated: '2 hours ago', image: '🥥' },
-    { id: 2, name: 'Arecanut', price: '₹180/kg', market: 'Udupi Market', updated: '3 hours ago', image: '🌰' },
-    { id: 3, name: 'Paddy', price: '₹45/kg', market: 'Mangalore Market', updated: '1 hour ago', image: '🌾' },
-    { id: 4, name: 'Cashew', price: '₹320/kg', market: 'Kannur Market', updated: '4 hours ago', image: '🥜' },
-    { id: 5, name: 'Spices', price: '₹250/kg', market: 'Kochi Market', updated: '2 hours ago', image: '🌶️' },
-    { id: 6, name: 'Vegetables', price: '₹35/kg', market: 'Mangalore Market', updated: '1 hour ago', image: '🥬' },
-  ]
+  // Fetch Data from Backend
+  const fetchMarketData = async () => {
+    setLoading(true)
+    try {
+      const response = await axios.get('http://localhost:5000/api/market-prices?limit=500')
+      if (response.data.success) {
+        setMarketPrices(response.data.records)
+      }
+    } catch (error) {
+      console.error("Error fetching data:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
-  // Dummy buyers data
+  useEffect(() => {
+    fetchMarketData()
+  }, [])
+
+  // Helper: Get Unique values for filters
+  const getUniqueValues = (key) => {
+    return ['all', ...new Set(marketPrices.map(item => item[key]))].sort()
+  }
+
+  // Helper: Image Mapper
+  const getCropImage = (cropName) => {
+    const name = cropName.toLowerCase()
+    if (name.includes('coconut')) return '/images/coconut.jpg'
+    if (name.includes('paddy') || name.includes('rice')) return '/images/paddy.jpg'
+    if (name.includes('arecanut')) return '/images/arecanut.jpg'
+    if (name.includes('banana')) return '/images/banana.jpg'
+    if (name.includes('pepper') || name.includes('chilli') || name.includes('spices')) return '/images/spices.jpg'
+    if (name.includes('onion')) return '/images/onion.jpg'
+    if (name.includes('potato')) return '/images/potato.jpg'
+    if (name.includes('tomato')) return '/images/tomato.jpg'
+    if (name.includes('cashew')) return '/images/cashew.jpg'
+    return '/images/default.jpg'
+  }
+
+  // Helper: Price Converter
+  const formatPrice = (price) => {
+    const numPrice = parseFloat(price)
+    if (isNaN(numPrice)) return 'N/A'
+
+    // Base price is usually per Quintal (100kg)
+    if (priceUnit === 'kg') return `₹${(numPrice / 100).toFixed(2)}/kg`
+    if (priceUnit === 'quintal') return `₹${numPrice.toLocaleString()}/q`
+    if (priceUnit === 'ton') return `₹${(numPrice * 10).toLocaleString()}/ton`
+    return price
+  }
+
+  // Filter Logic
+  const filteredPrices = marketPrices.filter(item => {
+    const matchCrop = selectedCrop === 'all' || item.commodity === selectedCrop
+    const matchLoc = selectedLocation === 'all' || item.district === selectedLocation
+    return matchCrop && matchLoc
+  })
+
+  // Dummy buyers data (Unchanged)
   const buyers = [
     { id: 1, name: 'Agro Fresh Exports', requirement: 'Looking for 5 tons of Coconut', location: 'Mangalore' },
     { id: 2, name: 'Premium Foods Ltd', requirement: 'Need 2 tons of Arecanut (Grade A)', location: 'Udupi' },
@@ -107,42 +159,76 @@ export default function FarmerDashboard() {
           {/* Left Column - Market Prices */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-2xl shadow-lg p-8">
-              <h2 className="text-3xl font-bold text-gray-900 mb-6">Current Market Prices</h2>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-3xl font-bold text-gray-900">Current Market Prices</h2>
+                <div className="flex gap-2 bg-gray-100 p-1 rounded-lg">
+                   {['kg', 'quintal', 'ton'].map(unit => (
+                     <button 
+                       key={unit}
+                       onClick={() => setPriceUnit(unit)}
+                       className={`px-3 py-1 text-sm rounded-md capitalize transition-all ${priceUnit === unit ? 'bg-white shadow text-green-700 font-bold' : 'text-gray-500 hover:text-gray-900'}`}
+                     >
+                       /{unit}
+                     </button>
+                   ))}
+                </div>
+              </div>
 
               {/* Filters */}
               <div className="grid md:grid-cols-2 gap-4 mb-8">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Select Crop</label>
                   <select value={selectedCrop} onChange={(e) => setSelectedCrop(e.target.value)} className="w-full p-3 border-2 border-green-200 rounded-lg focus:border-green-600 focus:outline-none">
-                    <option value="all">All Crops</option>
-                    <option value="coconut">Coconut</option>
-                    <option value="arecanut">Arecanut</option>
-                    <option value="paddy">Paddy</option>
-                    <option value="cashew">Cashew</option>
+                    {getUniqueValues('commodity').map(crop => (
+                      <option key={crop} value={crop}>{crop === 'all' ? 'All Crops' : crop}</option>
+                    ))}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Select Location</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Select District</label>
                   <select value={selectedLocation} onChange={(e) => setSelectedLocation(e.target.value)} className="w-full p-3 border-2 border-green-200 rounded-lg focus:border-green-600 focus:outline-none">
-                    <option value="mangalore">Mangalore</option>
-                    <option value="udupi">Udupi</option>
-                    <option value="belgaum">Belgaum</option>
-                    <option value="kochi">Kochi</option>
+                     {getUniqueValues('district').map(loc => (
+                      <option key={loc} value={loc}>{loc === 'all' ? 'All Locations' : loc}</option>
+                    ))}
                   </select>
                 </div>
               </div>
 
               {/* Market Prices Grid */}
-              <div className="grid md:grid-cols-2 gap-4">
-                {marketPrices.map((crop) => (
-                  <div key={crop.id} className="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-6 hover:shadow-lg hover:scale-105 transition-all duration-300 cursor-pointer">
-                    <div className="text-5xl mb-3">{crop.image}</div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">{crop.name}</h3>
-                    <div className="text-3xl font-bold text-green-600 mb-2">{crop.price}</div>
-                    <div className="text-sm text-gray-600 mb-1">{crop.market}</div>
-                    <div className="text-xs text-gray-500">Updated {crop.updated}</div>
-                  </div>
-                ))}
+              <div className="grid md:grid-cols-2 gap-4 max-h-[600px] overflow-y-auto pr-2">
+                {loading ? (
+                    <div className="col-span-2 text-center py-10 text-gray-500">
+                        <RefreshCw className="animate-spin h-8 w-8 mx-auto mb-2 text-green-500"/>
+                        Fetching latest prices from Mandi API...
+                    </div>
+                ) : filteredPrices.length > 0 ? (
+                  filteredPrices.map((crop, index) => (
+                    <div key={index} className="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-4 hover:shadow-lg hover:scale-105 transition-all duration-300 cursor-pointer">
+                      <div className="relative mb-3 h-32 w-full rounded-lg overflow-hidden bg-white shadow-sm">
+                        <img 
+                          src={getCropImage(crop.commodity)} 
+                          alt={crop.commodity}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = '/images/default.jpg'; 
+                          }}
+                        />
+                        <span className="absolute top-2 right-2 text-xs bg-green-600 text-white px-2 py-1 rounded-full font-medium shadow-sm">{crop.variety}</span>
+                      </div>
+                      <h3 className="text-lg font-bold text-gray-900 mb-1 leading-tight">{crop.commodity}</h3>
+                      <div className="text-2xl font-bold text-green-700 mb-2">{formatPrice(crop.modal_price)}</div>
+                      <div className="text-sm font-medium text-gray-700">📍 {crop.market}, {crop.district}</div>
+                      <div className="text-xs text-gray-500 mt-2 flex items-center gap-1">
+                        <Newspaper className="w-3 h-3" /> {crop.arrival_date}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                    <div className="col-span-2 text-center py-10 text-gray-500">
+                        No market data found for selected filters.
+                    </div>
+                )}
               </div>
             </div>
           </div>
