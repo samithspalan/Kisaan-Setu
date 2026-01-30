@@ -7,7 +7,7 @@ export default function FarmerDashboard() {
   const [selectedCrop, setSelectedCrop] = useState('all')
   const [selectedLocation, setSelectedLocation] = useState('all')
   const [userLocation, setUserLocation] = useState('') // New: User's preferred location
-  const [activeLink, setActiveLink] = useState('market-prices')
+  const [activeLink, setActiveLink] = useState('home')
   const [marketPrices, setMarketPrices] = useState([])
   const [loading, setLoading] = useState(true)
   const [priceUnit, setPriceUnit] = useState('kg') // kg, quintal, ton
@@ -346,7 +346,7 @@ export default function FarmerDashboard() {
                     <select 
                       value={userLocation} 
                       onChange={(e) => setUserLocation(e.target.value)} 
-                      className={`appearance-none w-full border text-gray-700 py-3 px-4 pr-10 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500/50 font-medium transition-shadow cursor-pointer ${userLocation ? 'bg-green-50 border-green-500 ring-2 ring-green-100' : 'bg-[#fcf9f2] border-stone-200'}`}
+                      className={`appearance-none w-full border text-gray-700 py-3 px-4 pr-10 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500/50 font-medium transition-shadow cursor-pointer ${userLocation ? 'bg-green-50 border-green-500 ring-2 ring-green-100' : 'bg-amber-50 border-stone-200'}`}
                     >
                         <option value="">Set My Location (General Map)</option>
                         {Object.keys(regionalCrops).sort().map(loc => (
@@ -363,7 +363,7 @@ export default function FarmerDashboard() {
                     <select 
                       value={selectedCrop} 
                       onChange={(e) => setSelectedCrop(e.target.value)} 
-                      className="appearance-none w-full bg-[#fcf9f2] border border-stone-200 text-gray-700 py-3 px-4 pr-10 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500 font-medium transition-shadow cursor-pointer"
+                      className="appearance-none w-full bg-amber-50 border border-stone-200 text-gray-700 py-3 px-4 pr-10 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500 font-medium transition-shadow cursor-pointer"
                     >
                         {getUniqueValues('commodity').map(crop => (
                           <option key={crop} value={crop}>{crop === 'all' ? 'Select Crop' : crop}</option>
@@ -379,7 +379,7 @@ export default function FarmerDashboard() {
                     <select 
                       value={selectedLocation} 
                       onChange={(e) => setSelectedLocation(e.target.value)} 
-                      className="appearance-none w-full bg-[#fcf9f2] border border-stone-200 text-gray-700 py-3 px-4 pr-10 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500 font-medium transition-shadow cursor-pointer"
+                      className="appearance-none w-full bg-amber-50 border border-stone-200 text-gray-700 py-3 px-4 pr-10 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500 font-medium transition-shadow cursor-pointer"
                     >
                          {getUniqueValues('district').map(loc => (
                           <option key={loc} value={loc}>{loc === 'all' ? 'All Locations' : loc}</option>
@@ -491,7 +491,7 @@ export default function FarmerDashboard() {
                     <div 
                       key={index} 
                       onClick={() => setActiveCommodity(commodityName)}
-                      className="bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.06)] overflow-hidden hover:shadow-[0_8px_24px_rgba(0,0,0,0.12)] hover:-translate-y-1 transition-all duration-300 border border-stone-100 flex flex-col group h-full cursor-pointer relative"
+                      className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-stone-100 flex flex-col group h-full cursor-pointer relative"
                     >
                       {/* Card Image */}
                       <div className="h-48 w-full relative overflow-hidden bg-stone-100">
@@ -505,7 +505,7 @@ export default function FarmerDashboard() {
                             e.target.src = 'https://placehold.co/600x400?text=No+Image'; 
                           }}
                         />
-                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-90"></div>
+                         <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent opacity-90"></div>
                          
                          {/* Overlay Content */}
                          <div className="absolute bottom-0 left-0 p-5 w-full">
@@ -536,7 +536,7 @@ export default function FarmerDashboard() {
 
             {/* Empty State */}
             {!loading && filteredPrices.length === 0 && (
-                <div className="col-span-full text-center py-20 bg-[#f9f9f9] rounded-xl border-2 border-dashed border-stone-200">
+                <div className="col-span-full text-center py-20 bg-stone-50 rounded-xl border-2 border-dashed border-stone-200">
                         <Filter className="h-10 w-10 mx-auto text-stone-300 mb-3"/>
                         <p className="text-stone-500 font-medium">No prices found for standard crops.</p>
                         <button onClick={() => {setSelectedCrop('all'); setSelectedLocation('all')}} className="mt-2 text-sm text-green-600 font-semibold hover:underline">Clear Filters</button>
@@ -552,7 +552,7 @@ export default function FarmerDashboard() {
 
               <div className="space-y-4">
                 {buyers.map((buyer) => (
-                  <div key={buyer.id} className="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-200 rounded-xl p-5 hover:shadow-md transition-all">
+                  <div key={buyer.id} className="bg-linear-to-br from-blue-50 to-blue-100 border-2 border-blue-200 rounded-xl p-5 hover:shadow-md transition-all">
                     <h3 className="font-bold text-gray-900 mb-2">{buyer.name}</h3>
                     <p className="text-sm text-gray-700 mb-3">{buyer.requirement}</p>
                     <div className="flex items-center gap-2 text-xs text-gray-600 mb-4">
@@ -570,7 +570,7 @@ export default function FarmerDashboard() {
 
         {/* Bottom Action Cards */}
         <div className="grid md:grid-cols-2 gap-8">
-          <div className="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-2xl shadow-lg p-8 hover:shadow-xl transition-all cursor-pointer">
+          <div className="bg-linear-to-br from-green-500 to-green-600 text-white rounded-2xl shadow-lg p-8 hover:shadow-xl transition-all cursor-pointer">
             <div className="flex items-center gap-4">
               <Tractor className="w-16 h-16" />
               <div>
@@ -580,7 +580,7 @@ export default function FarmerDashboard() {
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-amber-600 to-orange-600 text-white rounded-2xl shadow-lg p-8 hover:shadow-xl transition-all cursor-pointer">
+          <div className="bg-linear-to-br from-amber-600 to-orange-600 text-white rounded-2xl shadow-lg p-8 hover:shadow-xl transition-all cursor-pointer">
             <div className="flex items-center gap-4">
               <Newspaper className="w-16 h-16" />
               <div>
