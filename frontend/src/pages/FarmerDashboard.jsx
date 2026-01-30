@@ -12,6 +12,8 @@ export default function FarmerDashboard({ onNavigate }) {
   const [loading, setLoading] = useState(true)
   const [priceUnit, setPriceUnit] = useState('kg')
   const [activeCommodity, setActiveCommodity] = useState(null)
+  const [imageErrors, setImageErrors] = useState({})
+  const [activeImageError, setActiveImageError] = useState(false)
 
   // Fetch Data from Backend
   const fetchMarketData = async () => {
@@ -544,12 +546,19 @@ export default function FarmerDashboard({ onNavigate }) {
                       <Sprout className="w-32 h-32 text-emerald-900" />
                    </div>
                    <div className="relative flex items-center gap-5">
-                     <div className="w-20 h-20 rounded-2xl overflow-hidden shadow-md ring-4 ring-white border border-slate-100">
+                     <div className="w-20 h-20 rounded-2xl overflow-hidden shadow-md ring-4 ring-white border border-slate-100 relative bg-slate-100">
+                        {activeImageError && (
+                          <div className="absolute inset-0 flex items-center justify-center text-slate-400">
+                            <Leaf className="w-8 h-8" />
+                          </div>
+                        )}
                         <img 
                           src={getCropImage(activeCommodity)} 
                           className="w-full h-full object-cover" 
                           referrerPolicy="no-referrer"
                           alt={activeCommodity} 
+                          onLoad={() => setActiveImageError(false)}
+                          onError={() => setActiveImageError(true)}
                         />
                      </div>
                      <div>
@@ -619,15 +628,18 @@ export default function FarmerDashboard({ onNavigate }) {
                     >
                       {/* Card Image */}
                       <div className="h-56 w-full relative overflow-hidden bg-slate-100">
+                        {imageErrors[commodityName] && (
+                          <div className="absolute inset-0 flex items-center justify-center text-slate-400">
+                            <Leaf className="w-14 h-14" />
+                          </div>
+                        )}
                         <img 
                           src={getCropImage(commodityName)} 
                           alt={commodityName}
                           referrerPolicy="no-referrer"
                           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                          onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.src = 'https://placehold.co/600x400?text=No+Image'; 
-                          }}
+                          onLoad={() => setImageErrors(prev => ({ ...prev, [commodityName]: false }))}
+                          onError={() => setImageErrors(prev => ({ ...prev, [commodityName]: true }))}
                         />
                          <div className="absolute inset-0 bg-linear-to-t from-slate-900/90 via-slate-900/20 to-transparent"></div>
                          

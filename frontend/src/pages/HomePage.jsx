@@ -21,6 +21,9 @@ export default function HomePage() {
   const [farmers, setFarmers] = useState(0)
   const [volume, setVolume] = useState(0)
   const [mandis, setMandis] = useState(0)
+  const [animateRoles, setAnimateRoles] = useState(false)
+  const [rolesAnimationKey, setRolesAnimationKey] = useState(0)
+  const rolesSectionRef = useRef(null)
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -157,6 +160,29 @@ export default function HomePage() {
     }
   }, [])
 
+  useEffect(() => {
+    const element = rolesSectionRef.current
+    if (!element) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setAnimateRoles(false)
+          requestAnimationFrame(() => {
+            setRolesAnimationKey((prev) => prev + 1)
+            setAnimateRoles(true)
+          })
+        } else {
+          setAnimateRoles(false)
+        }
+      },
+      { threshold: 0.4 }
+    )
+
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [])
+
   return (
     <div className="min-h-screen bg-slate-50 relative overflow-hidden font-sans text-slate-900 selection:bg-emerald-200 selection:text-emerald-900">
       
@@ -272,7 +298,11 @@ export default function HomePage() {
       </section>
 
       {/* Login Cards Section */}
-      <section id="login-section" className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 z-10">
+      <section
+        id="login-section"
+        ref={rolesSectionRef}
+        className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 z-10"
+      >
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
             Select Your Role
@@ -283,9 +313,9 @@ export default function HomePage() {
         </div>
 
         {/* Login Cards Grid */}
-        <div className="grid md:grid-cols-2 gap-10 mb-12 max-w-4xl mx-auto">
+        <div key={rolesAnimationKey} className="grid md:grid-cols-2 gap-10 mb-12 max-w-4xl mx-auto">
           {/* Farmer Card */}
-          <a href="#farmer-login" className="group block">
+          <a href="#farmer-login" className={`group block ${animateRoles ? 'animate-slide-in-left' : 'opacity-0 -translate-x-8'}`}>
             <div className="h-full bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform group-hover:scale-105 overflow-hidden">
               <div className="bg-linear-to-br from-green-400 to-green-600 p-8 relative overflow-hidden">
                 <div className="absolute top-0 right-0 -mr-20 -mt-20 w-40 h-40 bg-white opacity-10 rounded-full"></div>
@@ -304,7 +334,7 @@ export default function HomePage() {
           </a>
             
           {/* Customer Card */}
-          <a href="#customer-login" className="group block">
+          <a href="#customer-login" className={`group block ${animateRoles ? 'animate-slide-in-right' : 'opacity-0 translate-x-8'}`}>
             <div className="h-full bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform group-hover:scale-105 overflow-hidden">
               <div className="bg-linear-to-br from-teal-400 to-teal-600 p-8 relative overflow-hidden">
                 <div className="absolute top-0 right-0 -mr-20 -mt-20 w-40 h-40 bg-white opacity-10 rounded-full"></div>
