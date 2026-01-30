@@ -117,55 +117,46 @@ export default function MarketAnalysis({ onBack }) {
   }
 
   const buildChartData = (historicalData = []) => {
-    const baseData = historicalData.map(data => ({
-      date: data.date,
-      price: data.avgPrice,
-      min: data.minPrice,
-      max: data.maxPrice
-    }))
-
-    if (baseData.length >= 3) return baseData
-
-    if (baseData.length === 1) {
-      const only = baseData[0]
-      const [d, m, y] = only.date.split('/')
-      const day = new Date(Number(y), Number(m) - 1, Number(d))
-      const dayMinus1 = new Date(day)
-      const dayMinus2 = new Date(day)
-      dayMinus1.setDate(dayMinus1.getDate() - 1)
-      dayMinus2.setDate(dayMinus2.getDate() - 2)
-
-      const price1 = Math.max(1, Math.round(only.price * 0.98))
-      const price2 = Math.max(1, Math.round(only.price * 1.02))
-
-      return [
-        { ...only, date: formatDate(dayMinus2), price: price1 },
-        { ...only, date: formatDate(dayMinus1), price: price2 },
-        only
-      ]
+    // If we have real historical data, use it
+    if (historicalData && historicalData.length > 0) {
+      return historicalData.map(data => ({
+        date: data.date,
+        price: data.avgPrice || data.price
+      }))
     }
 
-    if (baseData.length === 2) {
-      const [first, second] = baseData
-      const [d2, m2, y2] = second.date.split('/')
-      const date2 = new Date(Number(y2), Number(m2) - 1, Number(d2))
-      const midDate = new Date(date2)
-      midDate.setDate(midDate.getDate() - 1)
+    // Generate sample data based on current crop price
+    const crop = crops.find(c => c.commodity === selectedCrop)
+    if (!crop) return []
 
-      const midPrice = Math.round((first.price + second.price) / 2)
+    const basePrice = crop.avgPrice || 100
+    const data = []
+    const today = new Date()
 
-      return [
-        first,
-        { ...second, date: formatDate(midDate), price: midPrice },
-        second
-      ]
+    for (let i = 4; i >= 0; i--) {
+      const date = new Date(today)
+      date.setDate(date.getDate() - i)
+      const variance = (Math.random() - 0.5) * basePrice * 0.1
+      data.push({
+        date: `${date.getDate()}/${date.getMonth() + 1}`,
+        price: Math.round(basePrice + variance)
+      })
     }
 
-    return baseData
+    return data
   }
 
   // Chart data from historical data
   const chartData = buildChartData(cropAnalysis?.historicalData || [])
+  
+  // Debug log
+  useEffect(() => {
+    console.log('📊 Chart Data Debug:')
+    console.log('  - cropAnalysis:', cropAnalysis)
+    console.log('  - historicalData:', cropAnalysis?.historicalData)
+    console.log('  - chartData:', chartData)
+    console.log('  - chartData.length:', chartData?.length)
+  }, [chartData, cropAnalysis])
 
   // Determine trend color based on demand level from crop list
   const getTrendColor = () => {
@@ -284,16 +275,7 @@ export default function MarketAnalysis({ onBack }) {
                     key={crop.commodity}
                     onClick={() => {
                       setSelectedCropDemand(crop.demandLevel)
-                      setSelectedCrop(crop.commodity)
-                      setCropAnalysis({
-                        analysis: {
-                          priceMovement: { trend: crop.priceMovement, percentageChange: crop.changePct },
-                          demandLevel: crop.demandLevel,
-                          futurePrediction: { nextWeekPrice: crop.avgPrice, confidence: crop.demandLevel },
-                          recommendation: { action: crop.changePct > 5 ? 'sell' : 'hold' }
-                        },
-                        historicalData: []
-                      })
+                      fetchCropAnalysis(crop.commodity)
                     }}
                     className={`w-full text-left p-4 transition-all border-l-4 ${
                       selectedCrop === crop.commodity
@@ -400,7 +382,27 @@ export default function MarketAnalysis({ onBack }) {
                 </div>
               </div>
 
-              {/* Future Prediction */}
+              {/* Price Trend Chart */}
+              <div className={`rounded-2xl shadow-lg p-6 border transition-colors ${
+                isDark
+                  ? 'bg-slate-800 border-slate-700'
+                  : 'bg-white border-slate-100'
+              }`}>
+                <h3 className={`text-lg font-bold mb-4 flex items-center gap-2 ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>
+                  <TrendingUp className="w-5 h-5 text-green-600" /> Price Trend
+                </h3>
+                <div style={{ width: '100%', height: '280px' }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#475569' : '#e2e8f0'} />
+                      <XAxis dataKey="date" stroke={isDark ? '#94a3b8' : '#64748b'} />
+                      <YAxis stroke={isDark ? '#94a3b8' : '#64748b'} />
+                      <Tooltip contentStyle={{ backgroundColor: isDark ? '#1e293b' : '#ffffff', border: `1px solid ${isDark ? '#475569' : '#e2e8f0'}`, borderRadius: '8px' }} />
+                      <Line type="monotone" dataKey="price" stroke={getTrendColor()} strokeWidth={2} dot={{ fill: getTrendColor(), r: 5 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
               <div className={`rounded-2xl p-6 border-2 transition-colors ${
                 isDark
                   ? 'bg-slate-800 border-slate-700'

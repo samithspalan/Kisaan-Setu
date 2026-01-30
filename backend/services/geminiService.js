@@ -111,7 +111,7 @@ export const analyzeCropPrices = async (commodity) => {
             const [d1, m1, y1] = a.date.split('/');
             const [d2, m2, y2] = b.date.split('/');
             return new Date(y1, m1 - 1, d1) - new Date(y2, m2 - 1, d2);
-        });
+        }).slice(-5);  // Last 5 days for chart
 
         const recentData = ensureThreePoints(avgPricesByDate, priceData, commodity);
 
@@ -185,7 +185,7 @@ Be concise and data-driven in your analysis.`;
             const [d1, m1, y1] = a.date.split('/');
             const [d2, m2, y2] = b.date.split('/');
             return new Date(y1, m1 - 1, d1) - new Date(y2, m2 - 1, d2);
-        });
+        }).slice(-5);  // Last 5 days for chart
 
         const recentData = ensureThreePoints(avgPricesByDate, priceData, commodity);
 
