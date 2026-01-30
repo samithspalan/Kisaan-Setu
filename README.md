@@ -100,5 +100,5 @@ This approach transforms KisanSetu into a decision-support and empowerment platf
 
 Clone the repository:
 ```bash
-git clone <repository-url>
-cd project-root
+git clone [<repository-url>](https://github.com/samithspalan/Stack-Overlords)
+
