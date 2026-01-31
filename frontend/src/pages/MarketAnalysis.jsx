@@ -25,7 +25,7 @@ export default function MarketAnalysis({ onBack, onNavigate }) {
   const fetchMarketData = async () => {
     setLoading(true)
     try {
-      const response = await axios.get('http://localhost:5000/api/market-prices?limit=500')
+      const response = await axios.get('http://localhost:8000/api/market-prices?limit=500')
       if (response.data.success) {
         setMarketPrices(response.data.records)
         // Process crops from market data
@@ -80,7 +80,7 @@ export default function MarketAnalysis({ onBack, onNavigate }) {
   const fetchCropAnalysis = async (commodity) => {
     setAnalysisLoading(true)
     try {
-      const response = await axios.get(`http://localhost:5000/api/ai/analyze/${commodity}`)
+      const response = await axios.get(`http://localhost:8000/api/ai/analyze/${commodity}`)
       if (response.data.success) {
         console.log('🔍 Crop Analysis Data:', response.data.data)
         console.log('🎯 Demand Level:', response.data.data?.analysis?.demandLevel)

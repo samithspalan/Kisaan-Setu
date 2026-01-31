@@ -12,7 +12,7 @@
  * All requests include credentials: 'include' to handle JWT cookies
  */
 
-const API_BASE = 'http://localhost:5000/api';
+const API_BASE = 'http://localhost:8000/api';
 
 export const authService = {
   /**

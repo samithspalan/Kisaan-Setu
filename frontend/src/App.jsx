@@ -11,6 +11,7 @@ import CustomerLogin from './pages/CustomerLogin'
 import FarmerSignup from './pages/FarmerSignup'
 import CustomerSignup from './pages/CustomerSignup'
 import ChatsPage from './pages/ChatsPage'
+import CustomerChatsPage from './pages/CustomerChatsPage'
 import MyListings from './pages/MyListings'
 
 function App() {
@@ -161,7 +162,11 @@ function App() {
           )
         ) : currentPage === 'chats' ? (
           isAuthenticated ? (
-            <ChatsPage onBack={() => handleNavigate(userType === 'customer' ? 'customer-dashboard' : 'farmer-dashboard')} onNavigate={handleNavigate} userType={userType} />
+            userType === 'customer' ? (
+              <CustomerChatsPage onBack={() => handleNavigate('customer-dashboard')} onNavigate={handleNavigate} />
+            ) : (
+              <ChatsPage onBack={() => handleNavigate('farmer-dashboard')} onNavigate={handleNavigate} userType={userType} />
+            )
           ) : (
             <HomePage />
           )

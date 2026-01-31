@@ -22,6 +22,9 @@ export default function CustomerLogin({ onNavigate, onLoginSuccess }) {
       
       if (result.user) {
         console.log('Customer Login Success:', result.user)
+        // Store userId in localStorage for messaging
+        localStorage.setItem('userId', result.user._id)
+        localStorage.setItem('userName', result.user.Username)
         // Clear form
         setEmail('')
         setPassword('')

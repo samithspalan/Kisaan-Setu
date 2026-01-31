@@ -26,7 +26,7 @@ export default function MyListings({ onBack, onNavigate }) {
   const fetchListings = async () => {
     try {
       setLoading(true)
-      const response = await axios.get('http://localhost:5000/api/listings/my-listings', {
+      const response = await axios.get('http://localhost:8000/api/listings/my-listings', {
         withCredentials: true
       })
       if (response.data.success) {
@@ -44,7 +44,7 @@ export default function MyListings({ onBack, onNavigate }) {
   const handleSubmit = async (e) => {
     e.preventDefault()
     try {
-      const response = await axios.post('http://localhost:5000/api/listings/create', formData, {
+      const response = await axios.post('http://localhost:8000/api/listings/create', formData, {
         withCredentials: true
       })
       if (response.data.success) {
@@ -69,7 +69,7 @@ export default function MyListings({ onBack, onNavigate }) {
     if (!confirm('Are you sure you want to delete this listing?')) return
     
     try {
-      const response = await axios.delete(`http://localhost:5000/api/listings/${id}`, {
+      const response = await axios.delete(`http://localhost:8000/api/listings/${id}`, {
         withCredentials: true
       })
       if (response.data.success) {

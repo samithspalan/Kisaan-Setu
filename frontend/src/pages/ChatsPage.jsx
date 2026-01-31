@@ -106,37 +106,70 @@ export default function ChatsPage({ onBack, onNavigate, userType = 'farmer' }) {
             : 'bg-white/80 border-white/50 ring-1 ring-black/5'
         }`}>
           <div className="flex gap-1 items-center">
-            {[
-              { id: 'home', label: 'Home', icon: Home },
-              { id: 'market-prices', label: 'Market Prices', icon: BarChart3 },
-              { id: 'chats', label: 'Chats', icon: Bell },
-              { id: 'listings', label: 'My Listings', icon: Store }
-            ].map(item => (
-              <button 
-                key={item.id}
-                onClick={() => {
-                  if (item.id === 'home' && onNavigate) {
-                    onNavigate('farmer-dashboard')
-                  } else if (item.id === 'market-prices' && onNavigate) {
-                    onNavigate('market-analysis')
-                  } else if (item.id === 'chats') {
-                    setActiveLink(item.id)
-                  } else if (item.id === 'listings' && onNavigate) {
-                    onNavigate('my-listings')
-                  }
-                }}
-                className={`flex items-center gap-2 font-semibold transition-all duration-300 px-5 py-2.5 rounded-xl text-sm ${
-                  activeLink === item.id 
-                    ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' 
-                    : isDark
-                      ? 'text-slate-400 hover:text-emerald-400 hover:bg-slate-700/50'
-                      : 'text-slate-600 hover:text-emerald-700 hover:bg-emerald-50/80'
-                }`}
-              >
-                <item.icon className={`w-4 h-4 ${activeLink === item.id ? 'text-emerald-100' : isDark ? 'text-slate-500' : 'text-slate-400'}`} />
-                {item.label}
-              </button>
-            ))}
+            {userType === 'farmer' ? (
+              // Farmer Navigation
+              [
+                { id: 'home', label: 'Home', icon: Home },
+                { id: 'market-prices', label: 'Market Prices', icon: BarChart3 },
+                { id: 'chats', label: 'Chats', icon: Bell },
+                { id: 'listings', label: 'My Listings', icon: Store }
+              ].map(item => (
+                <button 
+                  key={item.id}
+                  onClick={() => {
+                    if (item.id === 'home' && onNavigate) {
+                      onNavigate('farmer-dashboard')
+                    } else if (item.id === 'market-prices' && onNavigate) {
+                      onNavigate('market-analysis')
+                    } else if (item.id === 'chats') {
+                      setActiveLink(item.id)
+                    } else if (item.id === 'listings' && onNavigate) {
+                      onNavigate('my-listings')
+                    }
+                  }}
+                  className={`flex items-center gap-2 font-semibold transition-all duration-300 px-5 py-2.5 rounded-xl text-sm ${
+                    activeLink === item.id 
+                      ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' 
+                      : isDark
+                        ? 'text-slate-400 hover:text-emerald-400 hover:bg-slate-700/50'
+                        : 'text-slate-600 hover:text-emerald-700 hover:bg-emerald-50/80'
+                  }`}
+                >
+                  <item.icon className={`w-4 h-4 ${activeLink === item.id ? 'text-emerald-100' : isDark ? 'text-slate-500' : 'text-slate-400'}`} />
+                  {item.label}
+                </button>
+              ))
+            ) : (
+              // Customer Navigation
+              [
+                { id: 'home', label: 'Home', icon: Home },
+                { id: 'marketplace', label: 'Marketplace', icon: Store },
+                { id: 'chats', label: 'Chats', icon: Bell }
+              ].map(item => (
+                <button 
+                  key={item.id}
+                  onClick={() => {
+                    if (item.id === 'home' && onNavigate) {
+                      onNavigate('customer-dashboard')
+                    } else if (item.id === 'marketplace' && onNavigate) {
+                      onNavigate('customer-dashboard')
+                    } else if (item.id === 'chats') {
+                      setActiveLink(item.id)
+                    }
+                  }}
+                  className={`flex items-center gap-2 font-semibold transition-all duration-300 px-5 py-2.5 rounded-xl text-sm ${
+                    activeLink === item.id 
+                      ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' 
+                      : isDark
+                        ? 'text-slate-400 hover:text-emerald-400 hover:bg-slate-700/50'
+                        : 'text-slate-600 hover:text-emerald-700 hover:bg-emerald-50/80'
+                  }`}
+                >
+                  <item.icon className={`w-4 h-4 ${activeLink === item.id ? 'text-emerald-100' : isDark ? 'text-slate-500' : 'text-slate-400'}`} />
+                  {item.label}
+                </button>
+              ))
+            )}
             <div className={`w-px h-8 transition-colors duration-300 ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`}></div>
             <button
               onClick={toggleTheme}

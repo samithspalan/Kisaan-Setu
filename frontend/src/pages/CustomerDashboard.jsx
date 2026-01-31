@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Sprout, LogOut, Search, MapPin, Phone, Mail, Home, Heart, ShoppingCart, Settings, Sun, Moon, Menu, X } from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
+import MessageModal from '../components/MessageModal'
 import axios from 'axios'
 
 export default function CustomerDashboard({ onNavigate, onLogout }) {
@@ -12,13 +13,18 @@ export default function CustomerDashboard({ onNavigate, onLogout }) {
   const [loading, setLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
+  const [selectedFarmer, setSelectedFarmer] = useState(null)
+  const [currentUser, setCurrentUser] = useState(null)
 
   // Fetch user data on mount
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        // This would fetch actual customer data from backend
-        setUser({ name: 'Customer', email: 'customer@example.com' })
+        const userId = localStorage.getItem('userId')
+        const userName = localStorage.getItem('userName')
+        const userData = { name: userName || 'Customer', email: 'customer@example.com', id: userId }
+        setUser(userData)
+        setCurrentUser(userData)
       } catch (error) {
         console.error('Error fetching user:', error)
       }
@@ -26,24 +32,41 @@ export default function CustomerDashboard({ onNavigate, onLogout }) {
     fetchUser()
   }, [])
 
-  // Fetch farmers/sellers data
+  // Fetch farmers/sellers data from backend listings
   useEffect(() => {
-    const fetchFarmers = async () => {
+    const fetchListings = async () => {
       setLoading(true)
       try {
-        // Mock data - in production this would come from backend
-        setFarmers([
-          { id: 1, name: 'Rajesh Kumar', location: 'Punjab', crops: ['Wheat', 'Rice'], rating: 4.5, verified: true },
-          { id: 2, name: 'Priya Singh', location: 'Haryana', crops: ['Vegetable', 'Organic'], rating: 4.8, verified: true },
-          { id: 3, name: 'Ahmed Ali', location: 'Maharashtra', crops: ['Sugarcane', 'Maize'], rating: 4.2, verified: true },
-        ])
+        const response = await axios.get('http://localhost:8000/api/listings/all', {
+          withCredentials: true
+        })
+        
+        if (response.data.success && response.data.listings) {
+          // Transform listings data to display format with farmer info
+          const transformedData = response.data.listings.map(listing => ({
+            id: listing._id,
+            name: listing.farmerId?.Username || listing.farmerId?._id || 'Unknown Farmer',
+            location: listing.location || 'Not specified',
+            crops: [listing.commodity, listing.variety].filter(Boolean),
+            expectedPrice: listing.expectedPrice,
+            quantity: listing.quantity,
+            unit: listing.unit,
+            description: listing.description,
+            farmerId: listing.farmerId?._id,
+            createdAt: listing.createdAt
+          }))
+          
+          setFarmers(transformedData)
+        }
       } catch (error) {
-        console.error('Error fetching farmers:', error)
+        console.error('Error fetching listings:', error)
+        // Fallback to empty state if backend fails
+        setFarmers([])
       } finally {
         setLoading(false)
       }
     }
-    fetchFarmers()
+    fetchListings()
   }, [])
 
   const handleLogout = async () => {
@@ -186,23 +209,6 @@ export default function CustomerDashboard({ onNavigate, onLogout }) {
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <h3 className="text-xl font-bold">{farmer.name}</h3>
-                        {farmer.verified && (
-                          <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                            isDark ? 'bg-green-900/30 text-green-400' : 'bg-green-100 text-green-800'
-                          }`}>
-                            <span>✓</span> Verified
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 mt-2">
-                        <div className="flex items-center">
-                          {[...Array(5)].map((_, i) => (
-                            <span key={i} className={i < Math.floor(farmer.rating) ? 'text-yellow-400' : 'text-gray-300'}>★</span>
-                          ))}
-                        </div>
-                        <span className={`text-sm font-semibold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                          {farmer.rating} ({Math.floor(Math.random() * 200) + 50} reviews)
-                        </span>
                       </div>
                     </div>
                     <button className={`p-2.5 rounded-full transition-all ${
@@ -244,7 +250,10 @@ export default function CustomerDashboard({ onNavigate, onLogout }) {
 
                   {/* Action Buttons */}
                   <div className="grid grid-cols-2 gap-3">
-                    <button className="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2.5 rounded-lg transition-all duration-300 flex items-center justify-center gap-2">
+                    <button 
+                      onClick={() => setSelectedFarmer(farmer)}
+                      className="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2.5 rounded-lg transition-all duration-300 flex items-center justify-center gap-2"
+                    >
                       <Mail className="w-4 h-4" />
                       Message
                     </button>
@@ -260,6 +269,16 @@ export default function CustomerDashboard({ onNavigate, onLogout }) {
           )}
         </div>
       </div>
+
+      {/* Message Modal */}
+      {selectedFarmer && currentUser && (
+        <MessageModal
+          farmer={selectedFarmer}
+          currentUserId={currentUser.id}
+          currentUsername={currentUser.name}
+          onClose={() => setSelectedFarmer(null)}
+        />
+      )}
     </div>
   )
 }

@@ -4,13 +4,25 @@ import axios from 'axios';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import cookieParser from 'cookie-parser';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
 import authRoutes from './routes/auth.js';
+import listingsRoutes from './routes/listings.js';
+import messagesRoutes from './routes/messages.js';
+import Message from './model/Message.js';
 import Price from './model/priceModel.js';
 import { analyzeCropPrices, getAllCropsAnalysis } from './services/geminiService.js';
 
 dotenv.config();
 
 const app = express();
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+  cors: {
+    origin: "http://localhost:5173",
+    credentials: true
+  }
+});
 const PORT = process.env.PORT || 5000;
 
 app.use(cors({
@@ -27,6 +39,12 @@ mongoose.connect(process.env.MONGO_URI)
 
 // Auth Routes
 app.use('/api/auth', authRoutes);
+
+// Listings Routes
+app.use('/api/listings', listingsRoutes);
+
+// Messages Routes
+app.use('/api/messages', messagesRoutes);
 
 const API_KEY = process.env.API_KEY || "579b464db66ec23bdd00000168192898a7804f5c78598b8f95b641a1";
 const RESOURCE_ID = "9ef84268-d588-465a-a308-a864a43d0070";
@@ -142,10 +160,6 @@ app.get('/api/market-prices', async (req, res) => {
             source: "mock-fallback"
         });
     }
-});
-
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
 });
 
 // Helper function to get last 5 days dates
@@ -321,4 +335,77 @@ app.get('/api/ai/crop-rankings', async (req, res) => {
             error: error.message
         });
     }
+});
+
+// Socket.IO Real-time Messaging
+const activeUsers = new Map(); // userId -> socketId mapping
+
+io.on('connection', (socket) => {
+  console.log('User connected:', socket.id);
+
+  // User joins - register their socket
+  socket.on('join', (userId) => {
+    activeUsers.set(userId, socket.id);
+    console.log(`User ${userId} joined with socket ${socket.id}`);
+  });
+
+  // Send message
+  socket.on('send_message', async (data) => {
+    const { senderId, receiverId, message, listingId } = data;
+    const conversationId = [senderId, receiverId].sort().join('_');
+
+    try {
+      // Save to database
+      const newMessage = new Message({
+        conversationId,
+        senderId,
+        receiverId,
+        listingId,
+        message
+      });
+
+      await newMessage.save();
+      await newMessage.populate('senderId', 'Username email');
+      await newMessage.populate('receiverId', 'Username email');
+
+      // Send to recipient if online
+      const recipientSocket = activeUsers.get(receiverId);
+      if (recipientSocket) {
+        io.to(recipientSocket).emit('receive_message', {
+          _id: newMessage._id,
+          senderId: newMessage.senderId,
+          receiverId: newMessage.receiverId,
+          message: newMessage.message,
+          createdAt: newMessage.createdAt
+        });
+      }
+
+      // Confirm to sender
+      socket.emit('message_sent', {
+        _id: newMessage._id,
+        senderId: newMessage.senderId,
+        receiverId: newMessage.receiverId,
+        message: newMessage.message,
+        createdAt: newMessage.createdAt
+      });
+    } catch (error) {
+      console.error('Error saving message:', error);
+      socket.emit('message_error', { error: error.message });
+    }
+  });
+
+  // Disconnect
+  socket.on('disconnect', () => {
+    for (const [userId, socketId] of activeUsers.entries()) {
+      if (socketId === socket.id) {
+        activeUsers.delete(userId);
+        console.log(`User ${userId} disconnected`);
+        break;
+      }
+    }
+  });
+});
+
+httpServer.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
 });

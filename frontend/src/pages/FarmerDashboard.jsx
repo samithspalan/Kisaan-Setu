@@ -23,7 +23,7 @@ export default function FarmerDashboard({ onNavigate }) {
   const fetchMarketData = async () => {
     setLoading(true)
     try {
-      const response = await axios.get('http://localhost:5000/api/market-prices?limit=500')
+      const response = await axios.get('http://localhost:8000/api/market-prices?limit=500')
       if (response.data.success) {
         setMarketPrices(response.data.records)
       }
