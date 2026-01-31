@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Sprout, LogOut, Search, MapPin, Phone, Mail, Home, Heart, ShoppingCart, Settings, Sun, Moon, Menu, X } from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
 import axios from 'axios'
+import FarmerLocationMap from '../components/FarmerLocationMap'
 
 export default function CustomerDashboard({ onNavigate, onLogout }) {
   const { isDark, toggleTheme } = useTheme()
@@ -12,6 +13,8 @@ export default function CustomerDashboard({ onNavigate, onLogout }) {
   const [loading, setLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
+  const [showLocationMap, setShowLocationMap] = useState(false)
+  const [selectedFarmerForMap, setSelectedFarmerForMap] = useState(null)
 
   // Fetch user data on mount
   useEffect(() => {
@@ -49,10 +52,45 @@ export default function CustomerDashboard({ onNavigate, onLogout }) {
             unit: listing.unit,
             description: listing.description,
             farmerId: listing.farmerId?._id,
+            commodity: listing.commodity,
             createdAt: listing.createdAt
           }))
           
-          setFarmers(transformedData)
+          // Fetch real market prices from API for each unique commodity
+          const uniqueCommodities = [...new Set(transformedData.map(l => l.commodity))]
+          const marketPrices = {}
+          
+          await Promise.all(
+            uniqueCommodities.map(async (commodity) => {
+              try {
+                const apiResponse = await fetch(
+                  `https://api.data.gov.in/resource/9ef84268-d588-465a-a308-a864a43d0070?api-key=579b464db66ec23bdd00000168192898a7804f5c78598b8f95b641a1&format=json&filters[commodity]=${encodeURIComponent(commodity)}&limit=50`
+                )
+                const apiData = await apiResponse.json()
+                
+                if (apiData.records && apiData.records.length > 0) {
+                  // Calculate average modal price from API data
+                  const prices = apiData.records
+                    .map(r => parseFloat(r.modal_price))
+                    .filter(p => !isNaN(p) && p > 0)
+                  
+                  if (prices.length > 0) {
+                    marketPrices[commodity] = Math.round(prices.reduce((a, b) => a + b, 0) / prices.length)
+                  }
+                }
+              } catch (error) {
+                console.error(`Error fetching market price for ${commodity}:`, error)
+              }
+            })
+          )
+          
+          // Add market average price to each listing
+          const dataWithAvgPrice = transformedData.map(listing => ({
+            ...listing,
+            avgMarketPrice: marketPrices[listing.commodity] || listing.expectedPrice
+          }))
+          
+          setFarmers(dataWithAvgPrice)
         }
       } catch (error) {
         console.error('Error fetching listings:', error)
@@ -80,6 +118,11 @@ export default function CustomerDashboard({ onNavigate, onLogout }) {
     if (onNavigate) {
       onNavigate('chats')
     }
+  }
+
+  const handleViewLocation = (farmer) => {
+    setSelectedFarmerForMap(farmer)
+    setShowLocationMap(true)
   }
 
   return (
@@ -257,6 +300,63 @@ export default function CustomerDashboard({ onNavigate, onLogout }) {
                   {/* Divider */}
                   <div className={`h-px my-5 ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`}></div>
 
+                  {/* Price Information */}
+                  <div className="mb-5">
+                    <div className="grid grid-cols-2 gap-3">
+                      {/* Farmer's Price */}
+                      <div className={`p-4 rounded-xl ${isDark ? 'bg-slate-700/50' : 'bg-gradient-to-br from-teal-50 to-emerald-50'}`}>
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className={`w-2 h-2 rounded-full ${isDark ? 'bg-teal-400' : 'bg-teal-600'}`}></div>
+                          <p className={`text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                            Sell Price
+                          </p>
+                        </div>
+                        <p className={`text-2xl font-bold ${isDark ? 'text-teal-400' : 'text-teal-600'}`}>
+                          ₹{farmer.expectedPrice}
+                          <span className={`text-sm font-normal ml-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                            /{farmer.unit}
+                          </span>
+                        </p>
+                      </div>
+
+                      {/* Market Average Price */}
+                      <div className={`p-4 rounded-xl ${isDark ? 'bg-slate-700/50' : 'bg-gradient-to-br from-orange-50 to-amber-50'}`}>
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className={`w-2 h-2 rounded-full ${isDark ? 'bg-orange-400' : 'bg-orange-600'}`}></div>
+                          <p className={`text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                            Market Avg
+                          </p>
+                        </div>
+                        <p className={`text-2xl font-bold ${isDark ? 'text-orange-400' : 'text-orange-600'}`}>
+                          ₹{farmer.avgMarketPrice}
+                          <span className={`text-sm font-normal ml-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                            /{farmer.unit}
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Price Comparison Badge */}
+                    {farmer.expectedPrice < farmer.avgMarketPrice && (
+                      <div className="mt-3 flex items-center gap-2 text-sm">
+                        <div className={`px-3 py-1.5 rounded-full font-semibold ${
+                          isDark ? 'bg-green-900/30 text-green-400' : 'bg-green-100 text-green-700'
+                        }`}>
+                          💰 {Math.round(((farmer.avgMarketPrice - farmer.expectedPrice) / farmer.avgMarketPrice) * 100)}% Below Market Average
+                        </div>
+                      </div>
+                    )}
+                    {farmer.expectedPrice > farmer.avgMarketPrice && (
+                      <div className="mt-3 flex items-center gap-2 text-sm">
+                        <div className={`px-3 py-1.5 rounded-full font-semibold ${
+                          isDark ? 'bg-amber-900/30 text-amber-400' : 'bg-amber-100 text-amber-700'
+                        }`}>
+                          📈 {Math.round(((farmer.expectedPrice - farmer.avgMarketPrice) / farmer.avgMarketPrice) * 100)}% Above Market Average
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   {/* Action Buttons */}
                   <div className="grid grid-cols-2 gap-3">
                     <button 
@@ -266,7 +366,17 @@ export default function CustomerDashboard({ onNavigate, onLogout }) {
                       <Mail className="w-4 h-4" />
                       Message
                     </button>
-                    
+                    <button 
+                      onClick={() => handleViewLocation(farmer)}
+                      className={`w-full font-semibold py-2.5 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 ${
+                        isDark
+                          ? 'bg-slate-700 hover:bg-slate-600 text-teal-400'
+                          : 'bg-teal-100 hover:bg-teal-200 text-teal-700'
+                      }`}
+                    >
+                      <MapPin className="w-4 h-4" />
+                      Location
+                    </button>
                   </div>
                 </div>
               </div>
@@ -278,6 +388,19 @@ export default function CustomerDashboard({ onNavigate, onLogout }) {
           )}
         </div>
       </div>
+
+      {/* Location Map Modal */}
+      {showLocationMap && selectedFarmerForMap && (
+        <FarmerLocationMap
+          farmerLocation={selectedFarmerForMap.location}
+          farmerName={selectedFarmerForMap.name}
+          onClose={() => {
+            setShowLocationMap(false)
+            setSelectedFarmerForMap(null)
+          }}
+          isDark={isDark}
+        />
+      )}
     </div>
   )
 }
