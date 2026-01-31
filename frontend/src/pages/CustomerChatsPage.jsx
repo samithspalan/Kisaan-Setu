@@ -1,6 +1,8 @@
-import { useState } from 'react'
-import { ArrowLeft, Send, Search, MoreVertical, Home, Mail, X, Sun, Moon, Leaf } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { ArrowLeft, Send, Search, MoreVertical, Home, Mail, X, Sun, Moon, Leaf, Loader } from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
+import axios from 'axios'
+import io from 'socket.io-client'
 
 export default function CustomerChatsPage({ onBack, onNavigate }) {
   const { isDark, toggleTheme } = useTheme()
@@ -8,79 +10,141 @@ export default function CustomerChatsPage({ onBack, onNavigate }) {
   const [selectedChat, setSelectedChat] = useState(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [messageText, setMessageText] = useState('')
+  const [conversations, setConversations] = useState([])
+  const [messages, setMessages] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [sending, setSending] = useState(false)
+  const [currentUserId, setCurrentUserId] = useState(null)
+  const socketRef = useRef(null)
+  const messagesEndRef = useRef(null)
 
-  // Mock chat data - Customer specific (talking to farmers/sellers)
-  const [chats, setChats] = useState([
-    {
-      id: 1,
-      name: 'Fresh Farms Punjab',
-      seller: 'Rajesh Patel',
-      image: '🌾',
-      lastMessage: 'Your order will arrive tomorrow',
-      timestamp: '2:15 PM',
-      unread: 1,
-      online: true,
-      messages: [
-        { id: 1, sender: 'other', text: 'Hi, I have fresh wheat available', time: '1:30 PM' },
-        { id: 2, sender: 'you', text: 'How much per kg?', time: '1:45 PM' },
-        { id: 3, sender: 'other', text: '₹45 per kg, delivery available', time: '2:00 PM' },
-        { id: 4, sender: 'other', text: 'Your order will arrive tomorrow', time: '2:15 PM' },
-      ]
-    },
-    {
-      id: 2,
-      name: 'Organic Valley Farm',
-      seller: 'Priya Singh',
-      image: '🥬',
-      lastMessage: 'Do you want the usual delivery?',
-      timestamp: 'Yesterday',
-      unread: 0,
-      online: false,
-      messages: [
-        { id: 1, sender: 'other', text: 'Your weekly organic box is ready', time: 'Yesterday' },
-        { id: 2, sender: 'you', text: 'Great! Please deliver on Friday', time: 'Yesterday' },
-        { id: 3, sender: 'other', text: 'Do you want the usual delivery?', time: 'Yesterday' },
-      ]
-    },
-    {
-      id: 3,
-      name: 'Green Harvest Co.',
-      seller: 'Ahmed Khan',
-      image: '🥕',
-      lastMessage: 'Bulk discount available for orders above ₹5000',
-      timestamp: '2 days ago',
-      unread: 0,
-      online: true,
-      messages: [
-        { id: 1, sender: 'other', text: 'Bulk discount available for orders above ₹5000', time: '2 days ago' },
-      ]
-    },
-  ])
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }
 
-  const handleSendMessage = () => {
-    if (messageText.trim() && selectedChat) {
-      const updatedChats = chats.map(chat => {
-        if (chat.id === selectedChat.id) {
-          return {
-            ...chat,
-            messages: [
-              ...chat.messages,
-              { id: chat.messages.length + 1, sender: 'you', text: messageText, time: 'now' }
-            ],
-            lastMessage: messageText
-          }
-        }
-        return chat
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages])
+
+  // Get current user ID and initialize socket
+  useEffect(() => {
+    const userId = localStorage.getItem('userId')
+    if (userId) {
+      setCurrentUserId(userId)
+      
+      // Initialize Socket.IO
+      socketRef.current = io('http://localhost:8000')
+
+      socketRef.current.on('connect', () => {
+        console.log('Connected to socket server')
+        socketRef.current.emit('join', userId)
       })
-      setChats(updatedChats)
-      setSelectedChat(updatedChats.find(c => c.id === selectedChat.id))
-      setMessageText('')
+
+      socketRef.current.on('receive_message', (message) => {
+        console.log('Received message:', message)
+        setMessages(prev => [...prev, message])
+      })
+
+      socketRef.current.on('message_sent', (message) => {
+        console.log('Message sent:', message)
+        setMessages(prev => [...prev, message])
+      })
+
+      socketRef.current.on('message_error', (error) => {
+        console.error('Message error:', error)
+        alert('Failed to send message: ' + error.error)
+      })
+
+      // Check for selected farmer from dashboard
+      const selectedFarmer = localStorage.getItem('selectedChatFarmer')
+      if (selectedFarmer) {
+        try {
+          const farmer = JSON.parse(selectedFarmer)
+          // Open chat immediately
+          setSelectedChat({
+            id: farmer.id,
+            name: farmer.name,
+            location: farmer.location,
+            online: true
+          })
+          // Fetch conversation history (or start empty)
+          fetchConversation(farmer.id, farmer.name, farmer.location)
+          localStorage.removeItem('selectedChatFarmer') // Clear after opening
+        } catch (error) {
+          console.error('Error parsing selected farmer:', error)
+        }
+      }
+
+      // Fetch all conversations
+      fetchConversations()
+    }
+
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect()
+      }
+    }
+  }, [])
+
+  const fetchConversations = async () => {
+    try {
+      const response = await axios.get('http://localhost:8000/api/messages/conversations', {
+        withCredentials: true
+      })
+      if (response.data.success) {
+        setConversations(response.data.conversations)
+      }
+    } catch (error) {
+      console.error('Error fetching conversations:', error)
     }
   }
 
-  const filteredChats = chats.filter(chat =>
-    chat.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    chat.seller.toLowerCase().includes(searchTerm.toLowerCase())
+  const fetchConversation = async (farmerId, farmerName, farmerLocation) => {
+    setLoading(true)
+    try {
+      const response = await axios.get(
+        `http://localhost:8000/api/messages/conversation/${farmerId}`,
+        { withCredentials: true }
+      )
+      if (response.data.success) {
+        setMessages(response.data.messages || [])
+        setSelectedChat({
+          id: farmerId,
+          name: farmerName,
+          location: farmerLocation,
+          online: true
+        })
+      }
+    } catch (error) {
+      console.error('Error fetching conversation:', error)
+      // Even if no conversation exists, keep chat open for new message
+      setMessages([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSendMessage = () => {
+    if (messageText.trim() && selectedChat && currentUserId) {
+      setSending(true)
+      const messageData = {
+        senderId: currentUserId,
+        receiverId: selectedChat.id,
+        message: messageText
+      }
+
+      // Send via Socket.IO
+      socketRef.current.emit('send_message', messageData)
+      setMessageText('')
+      setSending(false)
+      
+      // Refresh conversations list to show new conversation
+      setTimeout(() => fetchConversations(), 500)
+    }
+  }
+
+  const filteredConversations = conversations.filter(conv =>
+    conv.otherUser?.Username?.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   return (
@@ -184,30 +248,35 @@ export default function CustomerChatsPage({ onBack, onNavigate }) {
 
           {/* Chat List Items */}
           <div className="flex-1 overflow-y-auto">
-            {filteredChats.map(chat => (
-              <button
-                key={chat.id}
-                onClick={() => setSelectedChat(chat)}
-                className={`w-full p-4 border-b ${isDark ? 'border-slate-700/30' : 'border-slate-200/50'} transition-all text-left ${isDark ? 'hover:bg-slate-700/50' : 'hover:bg-slate-50'} ${selectedChat?.id === chat.id ? (isDark ? 'bg-slate-700/50' : 'bg-teal-50') : ''}`}
-              >
-                <div className="flex items-start gap-3">
-                  <div className="text-3xl shrink-0">{chat.image}</div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2 mb-1">
-                      <h3 className={`font-bold truncate ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{chat.name}</h3>
-                      <span className={`text-xs shrink-0 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{chat.timestamp}</span>
+            {filteredConversations.length > 0 ? (
+              filteredConversations.map(conv => (
+                <button
+                  key={conv.otherUser._id}
+                  onClick={() => fetchConversation(conv.otherUser._id, conv.otherUser.Username, conv.otherUser.email)}
+                  className={`w-full p-4 border-b ${isDark ? 'border-slate-700/30' : 'border-slate-200/50'} transition-all text-left ${isDark ? 'hover:bg-slate-700/50' : 'hover:bg-slate-50'} ${selectedChat?.id === conv.otherUser._id ? (isDark ? 'bg-slate-700/50' : 'bg-teal-50') : ''}`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="text-3xl shrink-0">🌾</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <h3 className={`font-bold truncate ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{conv.otherUser.Username}</h3>
+                        <span className={`text-xs shrink-0 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                          {new Date(conv.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                      <p className={`text-xs mb-1 ${isDark ? 'text-slate-500' : 'text-slate-600'}`}>{conv.otherUser.email}</p>
+                      <p className={`text-sm truncate ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{conv.lastMessage.message}</p>
                     </div>
-                    <p className={`text-xs mb-1 ${isDark ? 'text-slate-500' : 'text-slate-600'}`}>{chat.seller}</p>
-                    <p className={`text-sm truncate ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{chat.lastMessage}</p>
                   </div>
-                  {chat.unread > 0 && (
-                    <div className="w-5 h-5 rounded-full bg-teal-600 text-white flex items-center justify-center shrink-0">
-                      <span className="text-xs font-bold">{chat.unread}</span>
-                    </div>
-                  )}
-                </div>
-              </button>
-            ))}
+                </button>
+              ))
+            ) : (
+              <div className="flex items-center justify-center h-full p-8 text-center">
+                <p className={isDark ? 'text-slate-400' : 'text-slate-500'}>
+                  No conversations yet. Click "Message" on a farmer listing to start chatting!
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -220,11 +289,11 @@ export default function CustomerChatsPage({ onBack, onNavigate }) {
                 <button onClick={() => setSelectedChat(null)} className="md:hidden">
                   <ArrowLeft className={`w-5 h-5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`} />
                 </button>
-                <div className="text-3xl">{selectedChat.image}</div>
+                <div className="text-3xl">🌾</div>
                 <div>
                   <h2 className={`font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{selectedChat.name}</h2>
                   <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-                    {selectedChat.online ? '🟢 Online' : '🔘 Offline'}
+                    {selectedChat.location || 'Farmer'}
                   </p>
                 </div>
               </div>
@@ -235,24 +304,41 @@ export default function CustomerChatsPage({ onBack, onNavigate }) {
 
             {/* Messages */}
             <div className={`flex-1 overflow-y-auto p-4 space-y-4 ${isDark ? 'bg-slate-800/50' : 'bg-slate-50'}`}>
-              {selectedChat.messages.map(message => (
-                <div key={message.id} className={`flex ${message.sender === 'you' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-xs px-4 py-2 rounded-2xl ${
-                    message.sender === 'you'
-                      ? isDark
-                        ? 'bg-teal-600 text-white'
-                        : 'bg-teal-600 text-white'
-                      : isDark
-                      ? 'bg-slate-700 text-slate-100'
-                      : 'bg-slate-100 text-slate-900'
-                  }`}>
-                    <p className="text-sm">{message.text}</p>
-                    <p className={`text-xs mt-1 ${message.sender === 'you' ? 'text-teal-100' : isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                      {message.time}
-                    </p>
-                  </div>
+              {loading ? (
+                <div className="flex items-center justify-center h-full">
+                  <Loader className="w-6 h-6 animate-spin text-teal-600" />
                 </div>
-              ))}
+              ) : messages.length > 0 ? (
+                messages.map((msg, idx) => (
+                  <div key={idx} className={`flex ${msg.senderId._id === currentUserId ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-xs px-4 py-2 rounded-2xl ${
+                      msg.senderId._id === currentUserId
+                        ? isDark
+                          ? 'bg-teal-600 text-white'
+                          : 'bg-teal-600 text-white'
+                        : isDark
+                        ? 'bg-slate-700 text-slate-100'
+                        : 'bg-slate-100 text-slate-900'
+                    }`}>
+                      <p className="text-sm">{msg.message}</p>
+                      <p className={`text-xs mt-1 ${msg.senderId._id === currentUserId ? 'text-teal-100' : isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                        {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full space-y-3 p-8">
+                  <div className="text-5xl mb-2">💬</div>
+                  <p className={`text-lg font-semibold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                    Start conversation with {selectedChat.name}
+                  </p>
+                  <p className={`text-sm text-center max-w-md ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    Send a message to begin your chat. They'll be notified instantly!
+                  </p>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
             </div>
 
             {/* Message Input */}
@@ -264,6 +350,7 @@ export default function CustomerChatsPage({ onBack, onNavigate }) {
                   value={messageText}
                   onChange={(e) => setMessageText(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                  disabled={sending}
                   className={`flex-1 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-600 transition-all border-0 ${
                     isDark
                       ? 'bg-slate-700 text-slate-100 placeholder-slate-400'
@@ -272,9 +359,10 @@ export default function CustomerChatsPage({ onBack, onNavigate }) {
                 />
                 <button
                   onClick={handleSendMessage}
-                  className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg transition-all flex items-center gap-2"
+                  disabled={sending || !messageText.trim()}
+                  className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg transition-all flex items-center gap-2 disabled:opacity-50"
                 >
-                  <Send className="w-4 h-4" />
+                  {sending ? <Loader className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                 </button>
               </div>
             </div>

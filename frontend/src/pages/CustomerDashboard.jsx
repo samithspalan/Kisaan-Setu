@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Sprout, LogOut, Search, MapPin, Phone, Mail, Home, Heart, ShoppingCart, Settings, Sun, Moon, Menu, X } from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
-import MessageModal from '../components/MessageModal'
 import axios from 'axios'
 
 export default function CustomerDashboard({ onNavigate, onLogout }) {
@@ -13,8 +12,6 @@ export default function CustomerDashboard({ onNavigate, onLogout }) {
   const [loading, setLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
-  const [selectedFarmer, setSelectedFarmer] = useState(null)
-  const [currentUser, setCurrentUser] = useState(null)
 
   // Fetch user data on mount
   useEffect(() => {
@@ -24,7 +21,6 @@ export default function CustomerDashboard({ onNavigate, onLogout }) {
         const userName = localStorage.getItem('userName')
         const userData = { name: userName || 'Customer', email: 'customer@example.com', id: userId }
         setUser(userData)
-        setCurrentUser(userData)
       } catch (error) {
         console.error('Error fetching user:', error)
       }
@@ -71,6 +67,19 @@ export default function CustomerDashboard({ onNavigate, onLogout }) {
 
   const handleLogout = async () => {
     await onLogout()
+  }
+
+  const handleMessageClick = (farmer) => {
+    // Store selected farmer info in localStorage for chats page
+    localStorage.setItem('selectedChatFarmer', JSON.stringify({
+      id: farmer.farmerId,
+      name: farmer.name,
+      location: farmer.location
+    }))
+    // Navigate to chats page
+    if (onNavigate) {
+      onNavigate('chats')
+    }
   }
 
   return (
@@ -251,7 +260,7 @@ export default function CustomerDashboard({ onNavigate, onLogout }) {
                   {/* Action Buttons */}
                   <div className="grid grid-cols-2 gap-3">
                     <button 
-                      onClick={() => setSelectedFarmer(farmer)}
+                      onClick={() => handleMessageClick(farmer)}
                       className="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2.5 rounded-lg transition-all duration-300 flex items-center justify-center gap-2"
                     >
                       <Mail className="w-4 h-4" />
@@ -269,16 +278,6 @@ export default function CustomerDashboard({ onNavigate, onLogout }) {
           )}
         </div>
       </div>
-
-      {/* Message Modal */}
-      {selectedFarmer && currentUser && (
-        <MessageModal
-          farmer={selectedFarmer}
-          currentUserId={currentUser.id}
-          currentUsername={currentUser.name}
-          onClose={() => setSelectedFarmer(null)}
-        />
-      )}
     </div>
   )
 }

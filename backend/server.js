@@ -50,55 +50,6 @@ const API_KEY = process.env.API_KEY || "579b464db66ec23bdd00000168192898a7804f5c
 const RESOURCE_ID = "9ef84268-d588-465a-a308-a864a43d0070";
 const BASE_URL = `https://api.data.gov.in/resource/${RESOURCE_ID}`;
 
-const ALLOWED_CROPS = [
-  "Tomato",
-  "Onion",
-  "Potato",
-  "Paddy",
-  "Wheat",
-  "Maize",
-  "Coconut",
-  "Arecanut",
-  "Banana",
-  "Chilli",
-  "Groundnut",
-  "Sugarcane"
-];
-
-// Mock Data for Fallback (When API fails/timeouts)
-const MOCK_DATA = [
-    { state: "Karnataka", district: "Udupi", market: "Udupi", commodity: "Coconut", variety: "Other", modal_price: "2800", arrival_date: "30/01/2026" },
-    { state: "Karnataka", district: "Dakshina Kannada", market: "Mangalore", commodity: "Arecanut", variety: "Red", modal_price: "45000", arrival_date: "30/01/2026" },
-    { state: "Maharashtra", district: "Pune", market: "Pune", commodity: "Onion", variety: "Red", modal_price: "2200", arrival_date: "30/01/2026" },
-    { state: "Punjab", district: "Ludhiana", market: "Ludhiana", commodity: "Wheat", variety: "Dara", modal_price: "2400", arrival_date: "30/01/2026" },
-    { state: "Kerala", district: "Kozhikode", market: "Kozhikode", commodity: "Pepper", variety: "Ungarbled", modal_price: "32000", arrival_date: "30/01/2026" },
-    { state: "Tamil Nadu", district: "Coimbatore", market: "Coimbatore", commodity: "Tomato", variety: "Hybrid", modal_price: "1800", arrival_date: "30/01/2026" },
-    { state: "Gujarat", district: "Surat", market: "Surat", commodity: "Cotton", variety: "Shankar-6", modal_price: "6500", arrival_date: "30/01/2026" },
-    { state: "Rajasthan", district: "Jaipur", market: "Jaipur", commodity: "Bajra", variety: "Hybrid", modal_price: "2100", arrival_date: "30/01/2026" },
-    { state: "West Bengal", district: "Bardhaman", market: "Burdwan", commodity: "Rice", variety: "Common", modal_price: "3100", arrival_date: "30/01/2026" },
-    { state: "Madhya Pradesh", district: "Indore", market: "Indore", commodity: "Soyabean", variety: "Yellow", modal_price: "4800", arrival_date: "30/01/2026" },
-    { state: "Uttar Pradesh", district: "Agra", market: "Agra", commodity: "Potato", variety: "Desi", modal_price: "1200", arrival_date: "30/01/2026" },
-    { state: "Andhra Pradesh", district: "Guntur", market: "Guntur", commodity: "Chilli Red", variety: "Teja", modal_price: "18000", arrival_date: "30/01/2026" },
-    { state: "Telangana", district: "Warangal", market: "Warangal", commodity: "Turmeric", variety: "Finger", modal_price: "5600", arrival_date: "30/01/2026" },
-    { state: "Bihar", district: "Patna", market: "Patna", commodity: "Maize", variety: "Hybrid", modal_price: "2050", arrival_date: "30/01/2026" },
-    { state: "Assam", district: "Guwahati", market: "Guwahati", commodity: "Ginger", variety: "Fresh", modal_price: "4500", arrival_date: "30/01/2026" },
-    { state: "Odisha", district: "Cuttack", market: "Cuttack", commodity: "Jute", variety: "TD-5", modal_price: "5100", arrival_date: "30/01/2026" },
-    { state: "Himachal Pradesh", district: "Shimla", market: "Shimla", commodity: "Apple", variety: "Royal Delicious", modal_price: "8500", arrival_date: "30/01/2026" },
-    { state: "Haryana", district: "Karnal", market: "Karnal", commodity: "Basmati Rice", variety: "1121", modal_price: "4200", arrival_date: "30/01/2026" },
-    { state: "Jharkhand", district: "Ranchi", market: "Ranchi", commodity: "Cauliflower", variety: "Local", modal_price: "1500", arrival_date: "30/01/2026" },
-    { state: "Chhattisgarh", district: "Raipur", market: "Raipur", commodity: "Paddy", variety: "Common", modal_price: "2200", arrival_date: "30/01/2026" },
-    { state: "Karnataka", district: "Hassan", market: "Hassan", commodity: "Coffee", variety: "Arabica", modal_price: "12000", arrival_date: "30/01/2026" },
-    { state: "Karnataka", district: "Mysore", market: "Mysore", commodity: "Ragi", variety: "Local", modal_price: "2800", arrival_date: "30/01/2026" },
-    { state: "Karnataka", district: "Shimoga", market: "Shimoga", commodity: "Arecanut", variety: "Bette", modal_price: "42000", arrival_date: "30/01/2026" },
-    { state: "Kerala", district: "Idukki", market: "Kumily", commodity: "Cardamom", variety: "Small", modal_price: "150000", arrival_date: "30/01/2026" },
-    { state: "Kerala", district: "Kottayam", market: "Kottayam", commodity: "Rubber", variety: "RSS-4", modal_price: "18000", arrival_date: "30/01/2026" },
-    { state: "Punjab", district: "Patiala", market: "Patiala", commodity: "Mustard", variety: "Oil", modal_price: "5400", arrival_date: "30/01/2026" },
-    { state: "Rajasthan", district: "Jodhpur", market: "Jodhpur", commodity: "Cumin Seed", variety: "Average", modal_price: "28000", arrival_date: "30/01/2026" },
-   // Added variety for dashboard testing
-   { state: "Karnataka", district: "Bangalore", market: "Binny Mill", commodity: "Beans", variety: "Green", modal_price: "3500", arrival_date: "30/01/2026" },
-   { state: "Karnataka", district: "Bangalore", market: "Binny Mill", commodity: "Carrot", variety: "Ooty", modal_price: "4500", arrival_date: "30/01/2026" },
-];
-
 // Helper to format date as DD/MM/YYYY
 const getFormattedDate = (date) => {
     const d = new Date(date);
@@ -112,14 +63,22 @@ const getFormattedDate = (date) => {
     return [day, month, year].join('/');
 }
 
+const parseArrivalDate = (dateStr) => {
+    if (!dateStr) return null;
+    const [dd, mm, yyyy] = dateStr.split('/').map(Number);
+    if (!dd || !mm || !yyyy) return null;
+    return new Date(yyyy, mm - 1, dd);
+};
+
 app.get('/api/market-prices', async (req, res) => {
     try {
         const { limit = 100, date, state } = req.query;
+        const parsedLimit = Math.min(parseInt(limit, 10) || 100, 5000);
         
         const params = {
             "api-key": API_KEY,
             "format": "json",
-            "limit": limit
+            "limit": parsedLimit
         };
 
         // If date is provided, use it. Otherwise, let API return default (usually latest).
@@ -133,31 +92,88 @@ app.get('/api/market-prices', async (req, res) => {
         }
 
         // Added timeout to fail fast and switch to mock data
-        let response = await axios.get(BASE_URL, { params, timeout: 5000 });
-        
-        // If API returns empty and we were looking for a specific date, maybe try fallback?
-        // But if we didn't specify a date (fetching latest), and it's empty, then the API is truly empty.
-        
-        // Original Logic:
-        // if ((!response.data.records || response.data.records.length === 0) && !date) { ... }
-        
-        // New Logic: Just return what we found. If the user didn't specify a date, we trust the API gave us the latest.
-        
+        const fetchWithRetry = async (attempts = 2, customParams = params) => {
+            let lastError;
+            for (let i = 0; i < attempts; i++) {
+                try {
+                    return await axios.get(BASE_URL, { params: customParams, timeout: 30000 });
+                } catch (error) {
+                    lastError = error;
+                }
+            }
+            throw lastError;
+        };
+
+        // If requesting a large limit, page through the API using offset
+        if (!date && parsedLimit > 1000) {
+            const pageSize = 1000;
+            let offset = 0;
+            let allRecords = [];
+
+            while (allRecords.length < parsedLimit) {
+                const pageParams = {
+                    ...params,
+                    limit: Math.min(pageSize, parsedLimit - allRecords.length),
+                    offset
+                };
+
+                const response = await fetchWithRetry(2, pageParams);
+                const records = response.data.records || [];
+                if (records.length === 0) break;
+
+                allRecords.push(...records);
+                offset += records.length;
+            }
+
+            return res.json({
+                success: true,
+                records: allRecords,
+                source: date ? date : "latest-available"
+            });
+        }
+
+        const response = await fetchWithRetry();
+        const apiRecords = response.data.records || [];
+
+        // If API returns very few records, try database fallback
+        if (!date && !state && apiRecords.length < parsedLimit) {
+            try {
+                const dbRecords = await Price.find().sort({ arrival_date: -1 }).limit(parsedLimit).lean();
+                if (dbRecords.length > apiRecords.length) {
+                    return res.json({
+                        success: true,
+                        records: dbRecords,
+                        source: "database-fallback"
+                    });
+                }
+            } catch (dbErr) {
+                console.error("DB Error:", dbErr.message);
+            }
+        }
+
         res.json({
             success: true,
-            records: response.data.records || [],
+            records: apiRecords,
             source: date ? date : "latest-available"
         });
 
     } catch (error) {
         console.error("API Error:", error.message);
-        console.log("Serving Mock Data due to API failure...");
-        
-        // Return Mock Data instead of failing
-        res.json({
-            success: true,
-            records: MOCK_DATA,
-            source: "mock-fallback"
+
+        // Try database fallback only (no mock data)
+        try {
+            const dbRecords = await Price.find().sort({ arrival_date: -1 }).limit(parsedLimit).lean();
+            if (dbRecords.length > 0) {
+                console.log(`Serving ${dbRecords.length} records from database`);
+                return res.json({ success: true, records: dbRecords, source: "database-fallback" });
+            }
+        } catch (dbErr) {
+            console.error("DB Error:", dbErr.message);
+        }
+
+        res.status(502).json({
+            success: false,
+            message: "Failed to fetch data from API and database is empty"
         });
     }
 });
@@ -173,17 +189,32 @@ const getLastNDaysDates = (n) => {
     return dates;
 };
 
-// Route to fetch and store last 3 days of crop prices in database
+// Route to fetch and store last N days of crop prices in database
 app.post('/api/store-crop-prices', async (req, res) => {
     try {
-        const lastNDates = getLastNDaysDates(3);
-        console.log("Fetching prices for last 3 days:", lastNDates);
+        const days = Math.min(parseInt(req.query.days, 10) || 6, 60);
+        // Use last available dates from API (not calendar days)
+        const availableDates = await (async () => {
+            const params = { "api-key": API_KEY, "format": "json", "limit": 5000 };
+            const response = await axios.get(BASE_URL, { params, timeout: 15000 });
+            const records = response.data.records || [];
+            const uniqueDates = Array.from(new Set(records.map(r => r.arrival_date).filter(Boolean)));
+            uniqueDates.sort((a, b) => {
+                const da = parseArrivalDate(a);
+                const db = parseArrivalDate(b);
+                return (db?.getTime() || 0) - (da?.getTime() || 0);
+            });
+            return uniqueDates.slice(0, days);
+        })();
+
+        const lastNDates = availableDates;
+        console.log(`Fetching prices for last ${lastNDates.length} available dates:`, lastNDates);
 
         let allPrices = [];
         let successCount = 0;
         let fetchDetails = [];
 
-        // Fetch data for last 3 days
+        // Fetch data for last N days
         for (const date of lastNDates) {
             try {
                 const params = {
@@ -195,28 +226,21 @@ app.post('/api/store-crop-prices', async (req, res) => {
 
                 const response = await axios.get(BASE_URL, { params, timeout: 10000 });
                 if (response.data.records) {
-                    const filteredRecords = response.data.records.filter(record => 
-                        ALLOWED_CROPS.some(crop => 
-                            record.commodity.toLowerCase().includes(crop.toLowerCase()) ||
-                            record.commodity.toLowerCase().replace(/\s+/g, '').includes(crop.toLowerCase())
-                        )
-                    );
-                    
-                    allPrices.push(...filteredRecords);
+                    allPrices.push(...response.data.records);
                     successCount++;
                     
                     const cropBreakdown = {};
-                    filteredRecords.forEach(r => {
+                    response.data.records.forEach(r => {
                         cropBreakdown[r.commodity] = (cropBreakdown[r.commodity] || 0) + 1;
                     });
                     
                     fetchDetails.push({
                         date,
-                        total: filteredRecords.length,
+                        total: response.data.records.length,
                         crops: cropBreakdown
                     });
                     
-                    console.log(`✅ ${date}: ${filteredRecords.length} records`, cropBreakdown);
+                    console.log(`✅ ${date}: ${response.data.records.length} records`, cropBreakdown);
                 }
             } catch (error) {
                 console.error(`❌ Error fetching data for ${date}:`, error.message);
@@ -227,12 +251,12 @@ app.post('/api/store-crop-prices', async (req, res) => {
         if (allPrices.length === 0) {
             return res.status(400).json({
                 success: false,
-                message: 'No price data found for allowed crops in the last 3 days',
+                message: `No price data found for the last ${days} days`,
                 fetchDetails
             });
         }
 
-        // Prepare data for database insertion (convert string prices to numbers)
+        // Prepare data for database insertion (API records only)
         const pricesForDB = allPrices.map(price => ({
             state: price.state,
             district: price.district,
@@ -257,10 +281,10 @@ app.post('/api/store-crop-prices', async (req, res) => {
 
         res.json({
             success: true,
-            message: `Successfully stored ${insertedPrices.length} crop prices for last 3 days`,
+            message: `Successfully stored ${insertedPrices.length} crop prices for last ${days} days`,
             recordsStored: insertedPrices.length,
             daysProcessed: successCount,
-            totalDays: 3,
+            totalDays: days,
             cropBreakdown: cropCounts,
             fetchDetails
         });
