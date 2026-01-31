@@ -1,0 +1,85 @@
+{
+  "nav": {
+    "home": "ಮನೆ",
+    "listings": "ನನ್ನ ಪಟ್ಟಿಗಳು",
+    "analytics": "ವಿಶ್ಲೇಷಣೆ",
+    "notifications": "ಅಧಿಸೂಚನೆಗಳು",
+    "marketplace": "ಮಾರುಕಟ್ಟೆ",
+    "logout": "ಲಾಗ್ ಔಟ್"
+  },
+  "common": {
+    "search": "ಹುಡುಕಿ",
+    "location": "ಸ್ಥಳ",
+    "price": "ಬೆಲೆ",
+    "quantity": "ಪ್ರಮಾಣ",
+    "description": "ವಿವರಣೆ",
+    "submit": "ಸಲ್ಲಿಸಿ",
+    "cancel": "ರದ್ದುಮಾಡಿ",
+    "edit": "ಸಂಪಾದಿಸಿ",
+    "delete": "ಅಳಿಸಿ",
+    "create": "ರಚಿಸಿ",
+    "back": "ಹಿಂದೆ",
+    "loading": "ಲೋಡ್ ಆಗುತ್ತಿದೆ...",
+    "noData": "ಡೇಟಾ ಲಭ್ಯವಿಲ್ಲ"
+  },
+  "dashboard": {
+    "title": "ಗ್ರಾಹಕ ಡ್ಯಾಶ್‌ಬೋರ್ಡ್",
+    "searchPlaceholder": "ಬೆಳೆಗಳು, ರೈತರು ಅಥವಾ ಸ್ಥಳಗಳನ್ನು ಹುಡುಕಿ...",
+    "categories": {
+      "all": "ಎಲ್ಲಾ",
+      "fruits": "ಹಣ್ಣುಗಳು",
+      "vegetables": "ತರಕಾರಿಗಳು",
+      "grains": "ಧಾನ್ಯಗಳು",
+      "pulses": "ದಾಳಿಗಳು"
+    },
+    "farmerCard": {
+      "crops": "ಬೆಳೆಗಳು",
+      "sellPrice": "ಮಾರಾಟ ಬೆಲೆ",
+      "marketAvg": "ಮಾರುಕಟ್ಟೆ ಸರಾಸರಿ",
+      "belowMarket": "ಮಾರುಕಟ್ಟೆಗಿಂತ ಕಡಿಮೆ",
+      "aboveMarket": "ಮಾರುಕಟ್ಟೆಗಿಂತ ಹೆಚ್ಚು",
+      "message": "ಸಂದೇಶ",
+      "location": "ಸ್ಥಳ",
+      "phone": "ದೂರವಾಣಿ",
+      "email": "ಇಮೇಲ್",
+      "noListings": "ಯಾವುದೇ ಪಟ್ಟಿಗಳು ಲಭ್ಯವಿಲ್ಲ"
+    }
+  },
+  "listings": {
+    "title": "ನನ್ನ ಪಟ್ಟಿಗಳು",
+    "createNew": "ಹೊಸ ಪಟ್ಟಿ ರಚಿಸಿ",
+    "commodity": "ಸರಕು",
+    "variety": "ವಿಧ",
+    "quantity": "ಪ್ರಮಾಣ",
+    "unit": "ಘಟಕ",
+    "expectedPrice": "ನಿರೀಕ್ಷಿತ ಬೆಲೆ (ಪ್ರತಿ ಕೆಜಿ)",
+    "location": "ಸ್ಥಳ",
+    "description": "ವಿವರಣೆ",
+    "marketPrice": {
+      "title": "ಮಾರುಕಟ್ಟೆ ಸರಾಸರಿ ಬೆಲೆ",
+      "fetching": "ನೇರ ಮಾರುಕಟ್ಟೆ ಡೇಟಾವನ್ನು ಪಡೆಯಲಾಗುತ್ತಿದೆ...",
+      "perUnit": "ಪ್ರತಿ",
+      "competitive": "ನಿಮ್ಮ ಬೆಲೆ ಮಾರುಕಟ್ಟೆಗಿಂತ {percent}% ಕಡಿಮೆ (ಸ್ಪರ್ಧಾತ್ಮಕ!)",
+      "aboveMarket": "ನಿಮ್ಮ ಬೆಲೆ ಮಾರುಕಟ್ಟೆಗಿಂತ {percent}% ಹೆಚ್ಚು",
+      "matchesMarket": "ನಿಮ್ಮ ಬೆಲೆ ಮಾರುಕಟ್ಟೆ ಸರಾಸರಿಗೆ ಹೊಂದಿಕೆಯಾಗುತ್ತದೆ",
+      "noData": "ಈ ಸರಕಿಗಾಗಿ ಯಾವುದೇ ಮಾರುಕಟ್ಟೆ ಡೇಟಾ ಲಭ್ಯವಿಲ್ಲ"
+    },
+    "noListings": "ಇನ್ನೂ ಯಾವುದೇ ಪಟ್ಟಿಗಳಿಲ್ಲ. ನಿಮ್ಮ ಮೊದಲ ಪಟ್ಟಿಯನ್ನು ರಚಿಸಿ!",
+    "deleteConfirm": "ನೀವು ಖಚಿತವಾಗಿ ಈ ಪಟ್ಟಿಯನ್ನು ಅಳಿಸಲು ಬಯಸುವಿರಾ?"
+  },
+  "map": {
+    "title": "ರೈತರ ಸ್ಥಳ",
+    "interactiveMap": "ಸಂವಾದಾತ್ಮಕ ನಕ್ಷೆ",
+    "close": "ಮುಚ್ಚಿ"
+  },
+  "auth": {
+    "login": "ಲಾಗಿನ್",
+    "signup": "ಸೈನ್ ಅಪ್",
+    "email": "ಇಮೇಲ್",
+    "password": "ಪಾಸ್‌ವರ್ಡ್",
+    "username": "ಬಳಕೆದಾರ ಹೆಸರು",
+    "role": "ಪಾತ್ರ",
+    "farmer": "ರೈತ",
+    "customer": "ಗ್ರಾಹಕ"
+  }
+}

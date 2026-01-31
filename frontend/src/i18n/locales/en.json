@@ -1,0 +1,85 @@
+{
+  "nav": {
+    "home": "Home",
+    "listings": "My Listings",
+    "analytics": "Analytics",
+    "notifications": "Notifications",
+    "marketplace": "Marketplace",
+    "logout": "Logout"
+  },
+  "common": {
+    "search": "Search",
+    "location": "Location",
+    "price": "Price",
+    "quantity": "Quantity",
+    "description": "Description",
+    "submit": "Submit",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "create": "Create",
+    "back": "Back",
+    "loading": "Loading...",
+    "noData": "No data available"
+  },
+  "dashboard": {
+    "title": "Customer Dashboard",
+    "searchPlaceholder": "Search for crops, farmers, or locations...",
+    "categories": {
+      "all": "All",
+      "fruits": "Fruits",
+      "vegetables": "Vegetables",
+      "grains": "Grains",
+      "pulses": "Pulses"
+    },
+    "farmerCard": {
+      "crops": "Crops",
+      "sellPrice": "Sell Price",
+      "marketAvg": "Market Avg",
+      "belowMarket": "below market",
+      "aboveMarket": "above market",
+      "message": "Message",
+      "location": "Location",
+      "phone": "Phone",
+      "email": "Email",
+      "noListings": "No listings available"
+    }
+  },
+  "listings": {
+    "title": "My Listings",
+    "createNew": "Create New Listing",
+    "commodity": "Commodity",
+    "variety": "Variety",
+    "quantity": "Quantity",
+    "unit": "Unit",
+    "expectedPrice": "Expected Price (per kg)",
+    "location": "Location",
+    "description": "Description",
+    "marketPrice": {
+      "title": "Market Average Price",
+      "fetching": "Fetching live market data...",
+      "perUnit": "per",
+      "competitive": "Your price is {percent}% below market (Competitive!)",
+      "aboveMarket": "Your price is {percent}% above market",
+      "matchesMarket": "Your price matches market average",
+      "noData": "No market data available for this commodity"
+    },
+    "noListings": "No listings yet. Create your first listing!",
+    "deleteConfirm": "Are you sure you want to delete this listing?"
+  },
+  "map": {
+    "title": "Farmer Location",
+    "interactiveMap": "Interactive Map",
+    "close": "Close"
+  },
+  "auth": {
+    "login": "Login",
+    "signup": "Sign Up",
+    "email": "Email",
+    "password": "Password",
+    "username": "Username",
+    "role": "Role",
+    "farmer": "Farmer",
+    "customer": "Customer"
+  }
+}
