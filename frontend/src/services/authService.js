@@ -14,6 +14,25 @@
 
 import { API_BASE } from '../config/api'
 
+const parseJsonSafe = async (response) => {
+  const text = await response.text()
+  if (!text) return {}
+
+  try {
+    return JSON.parse(text)
+  } catch {
+    return {
+      message: `Invalid server response (status ${response.status}).`
+    }
+  }
+}
+
+const toApiError = (response, payload, fallbackMessage) => ({
+  message:
+    payload?.message ||
+    `${fallbackMessage} (status ${response.status}). Check backend URL/CORS and redeploy.`
+})
+
 export const authService = {
   /**
    * Sign up a new farmer account
@@ -39,13 +58,11 @@ export const authService = {
         credentials: 'include',
         body: JSON.stringify({ Username: username, email, password })
       });
-      
+
+      const result = await parseJsonSafe(response)
       if (!response.ok) {
-        const error = await response.json();
-        return error;
+        return toApiError(response, result, 'Signup failed')
       }
-      
-      const result = await response.json();
       
       // Save user data to localStorage
       if (result.user) {
@@ -91,14 +108,14 @@ export const authService = {
       });
       
       console.log('[AUTH] Response status:', response.status)
-      
+
+      const result = await parseJsonSafe(response)
       if (!response.ok) {
-        const error = await response.json();
+        const error = toApiError(response, result, 'Signup failed')
         console.log('[AUTH] Error response:', error)
-        return error;
+        return error
       }
-      
-      const result = await response.json();
+
       console.log('[AUTH] Success response:', result)
       
       // Save user data to localStorage
@@ -140,13 +157,12 @@ export const authService = {
         credentials: 'include',
         body: JSON.stringify({ email, password })
       });
-      
+
+      const result = await parseJsonSafe(response)
       if (!response.ok) {
-        const error = await response.json();
-        return error;
+        return toApiError(response, result, 'Login failed')
       }
-      
-      const result = await response.json();
+
       console.log('[AUTH] Farmer login response:', result)
       
       // Save user data to localStorage
@@ -188,13 +204,12 @@ export const authService = {
         credentials: 'include',
         body: JSON.stringify({ email, password })
       });
-      
+
+      const result = await parseJsonSafe(response)
       if (!response.ok) {
-        const error = await response.json();
-        return error;
+        return toApiError(response, result, 'Login failed')
       }
-      
-      const result = await response.json();
+
       console.log('[AUTH] Customer login response:', result)
       
       // Save user data to localStorage
@@ -226,12 +241,13 @@ export const authService = {
         method: 'POST',
         credentials: 'include'
       });
+      const result = await parseJsonSafe(response)
       
       if (!response.ok) {
         console.log('Logout failed with status:', response.status);
       }
-      
-      return await response.json();
+
+      return result;
     } catch (error) {
       console.error('Logout error:', error);
       // Still return success even if the API call fails
@@ -264,8 +280,8 @@ export const authService = {
         console.log('Auth check failed with status:', response.status);
         return { user: null };
       }
-      
-      const data = await response.json();
+
+      const data = await parseJsonSafe(response)
       console.log('getCurrentUser response:', data);
       return data;
     } catch (error) {
@@ -292,7 +308,11 @@ export const authService = {
         credentials: 'include',
         body: JSON.stringify({ token })
       });
-      return await response.json();
+      const result = await parseJsonSafe(response)
+      if (!response.ok) {
+        throw new Error(toApiError(response, result, 'Google login failed').message)
+      }
+      return result;
     } catch (error) {
       console.error('Google login error:', error);
       throw error;
