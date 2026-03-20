@@ -239,8 +239,7 @@ export default function FarmerLogin({ onNavigate, onLoginSuccess }) {
               Don't have an account?{' '}
               <button 
                 type="button"
-                onClick={(e) => {
-                  e.preventDefault()
+                onClick={() => {
                   console.log('Signup button clicked, navigating to farmer-signup')
                   onNavigate('farmer-signup')
                 }}
