@@ -3,6 +3,7 @@ import axios from 'axios'
 import { ArrowLeft, TrendingUp, TrendingDown, Search, Zap, Leaf, Filter, AlertCircle, Sun, Moon, Home, BarChart3, Bell, Store, LogOut } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts'
 import { useTheme } from '../context/ThemeContext'
+import { API_BASE } from '../config/api'
 
 export default function MarketAnalysis({ onBack, onNavigate }) {
   const { isDark, toggleTheme } = useTheme()
@@ -25,14 +26,14 @@ export default function MarketAnalysis({ onBack, onNavigate }) {
   const fetchMarketData = async () => {
     setLoading(true)
     try {
-      const response = await axios.get('http://localhost:8000/api/market-prices?limit=5000')
+      const response = await axios.get(`${API_BASE}/market-prices?limit=5000`)
       if (response.data.success) {
         let records = response.data.records || []
 
         // If API returns too few records, fallback to stored database records
         if (records.length < 50) {
           try {
-            const dbResponse = await axios.get('http://localhost:8000/api/crop-prices?limit=5000')
+            const dbResponse = await axios.get(`${API_BASE}/crop-prices?limit=5000`)
             if (dbResponse.data.success && dbResponse.data.records?.length) {
               records = dbResponse.data.records
             }
@@ -118,7 +119,7 @@ export default function MarketAnalysis({ onBack, onNavigate }) {
   const fetchCropAnalysis = async (commodity) => {
     setAnalysisLoading(true)
     try {
-      const response = await axios.get(`http://localhost:8000/api/ai/analyze/${commodity}`)
+      const response = await axios.get(`${API_BASE}/ai/analyze/${commodity}`)
       if (response.data.success) {
         console.log('🔍 Crop Analysis Data:', response.data.data)
         console.log('🎯 Demand Level:', response.data.data?.analysis?.demandLevel)

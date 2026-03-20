@@ -4,6 +4,7 @@ import { useTheme } from '../context/ThemeContext'
 import { useTranslation } from 'react-i18next'
 import axios from 'axios'
 import LanguageToggle from '../components/LanguageToggle'
+import { API_BASE } from '../config/api'
 
 export default function MyListings({ onBack, onNavigate }) {
   const { isDark, toggleTheme } = useTheme()
@@ -78,7 +79,7 @@ export default function MyListings({ onBack, onNavigate }) {
   const fetchListings = async () => {
     try {
       setLoading(true)
-      const response = await axios.get('http://localhost:8000/api/listings/my-listings', {
+      const response = await axios.get(`${API_BASE}/listings/my-listings`, {
         withCredentials: true
       })
       if (response.data.success) {
@@ -96,7 +97,7 @@ export default function MyListings({ onBack, onNavigate }) {
   const handleSubmit = async (e) => {
     e.preventDefault()
     try {
-      const response = await axios.post('http://localhost:8000/api/listings/create', formData, {
+      const response = await axios.post(`${API_BASE}/listings/create`, formData, {
         withCredentials: true
       })
       if (response.data.success) {
@@ -121,7 +122,7 @@ export default function MyListings({ onBack, onNavigate }) {
     if (!confirm('Are you sure you want to delete this listing?')) return
     
     try {
-      const response = await axios.delete(`http://localhost:8000/api/listings/${id}`, {
+      const response = await axios.delete(`${API_BASE}/listings/${id}`, {
         withCredentials: true
       })
       if (response.data.success) {
@@ -319,7 +320,7 @@ export default function MyListings({ onBack, onNavigate }) {
               {/* Market Average Price Info */}
               {formData.commodity && (
                 <div className={`md:col-span-2 p-4 rounded-xl transition-colors ${
-                  isDark ? 'bg-slate-800/50' : 'bg-gradient-to-br from-emerald-50 to-teal-50'
+                  isDark ? 'bg-slate-800/50' : 'bg-linear-to-br from-emerald-50 to-teal-50'
                 }`}>
                   <div className="flex items-center justify-between">
                     <div>

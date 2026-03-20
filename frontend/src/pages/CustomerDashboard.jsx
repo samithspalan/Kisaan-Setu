@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import axios from 'axios'
 import FarmerLocationMap from '../components/FarmerLocationMap'
 import LanguageToggle from '../components/LanguageToggle'
+import { API_BASE } from '../config/api'
 
 export default function CustomerDashboard({ onNavigate, onLogout }) {
   const { isDark, toggleTheme } = useTheme()
@@ -39,7 +40,7 @@ export default function CustomerDashboard({ onNavigate, onLogout }) {
     const fetchListings = async () => {
       setLoading(true)
       try {
-        const response = await axios.get('http://localhost:8000/api/listings/all', {
+        const response = await axios.get(`${API_BASE}/listings/all`, {
           withCredentials: true
         })
         
@@ -314,7 +315,7 @@ export default function CustomerDashboard({ onNavigate, onLogout }) {
                   <div className="mb-5">
                     <div className="grid grid-cols-2 gap-3">
                       {/* Farmer's Price */}
-                      <div className={`p-4 rounded-xl ${isDark ? 'bg-slate-700/50' : 'bg-gradient-to-br from-teal-50 to-emerald-50'}`}>
+                      <div className={`p-4 rounded-xl ${isDark ? 'bg-slate-700/50' : 'bg-linear-to-br from-teal-50 to-emerald-50'}`}>
                         <div className="flex items-center gap-2 mb-1">
                           <div className={`w-2 h-2 rounded-full ${isDark ? 'bg-teal-400' : 'bg-teal-600'}`}></div>
                           <p className={`text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
@@ -330,7 +331,7 @@ export default function CustomerDashboard({ onNavigate, onLogout }) {
                       </div>
 
                       {/* Market Average Price */}
-                      <div className={`p-4 rounded-xl ${isDark ? 'bg-slate-700/50' : 'bg-gradient-to-br from-orange-50 to-amber-50'}`}>
+                      <div className={`p-4 rounded-xl ${isDark ? 'bg-slate-700/50' : 'bg-linear-to-br from-orange-50 to-amber-50'}`}>
                         <div className="flex items-center gap-2 mb-1">
                           <div className={`w-2 h-2 rounded-full ${isDark ? 'bg-orange-400' : 'bg-orange-600'}`}></div>
                           <p className={`text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>

@@ -3,6 +3,7 @@ import { ArrowLeft, Send, Search, MoreVertical, Home, Mail, X, Sun, Moon, Leaf, 
 import { useTheme } from '../context/ThemeContext'
 import axios from 'axios'
 import io from 'socket.io-client'
+import { API_BASE, SOCKET_URL } from '../config/api'
 
 export default function CustomerChatsPage({ onBack, onNavigate }) {
   const { isDark, toggleTheme } = useTheme()
@@ -33,7 +34,7 @@ export default function CustomerChatsPage({ onBack, onNavigate }) {
       setCurrentUserId(userId)
       
       // Initialize Socket.IO
-      socketRef.current = io('http://localhost:8000')
+      socketRef.current = io(SOCKET_URL)
 
       socketRef.current.on('connect', () => {
         console.log('[CUSTOMER] Connected to socket server, socket ID:', socketRef.current.id)
@@ -111,7 +112,7 @@ export default function CustomerChatsPage({ onBack, onNavigate }) {
   const fetchConversations = async () => {
     try {
       console.log('[CUSTOMER] Fetching conversations...')
-      const response = await axios.get('http://localhost:8000/api/messages/conversations', {
+      const response = await axios.get(`${API_BASE}/messages/conversations`, {
         withCredentials: true
       })
       console.log('[CUSTOMER] Conversations response:', response.data)
@@ -130,7 +131,7 @@ export default function CustomerChatsPage({ onBack, onNavigate }) {
     setLoading(true)
     try {
       const response = await axios.get(
-        `http://localhost:8000/api/messages/conversation/${farmerId}`,
+        `${API_BASE}/messages/conversation/${farmerId}`,
         { withCredentials: true }
       )
       if (response.data.success) {

@@ -4,6 +4,14 @@ import Token from "../config/token.js";
 import { OAuth2Client } from 'google-auth-library';
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const isProduction = process.env.NODE_ENV === "production";
+const cookieOptions = {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    path: "/"
+};
 
 export const singUp= async (req, res) => {
     try{
@@ -27,12 +35,7 @@ export const singUp= async (req, res) => {
             // profileImage
         });
      let token=Token(user._id);   
-    res.cookie("token", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-        maxAge: 7 * 24 * 60 * 60 * 1000
-    });
+    res.cookie("token", token, cookieOptions);
     return res.status(201).json({message: "User created successfully", user: {
         _id: user._id,
         Username: user.Username,
@@ -60,12 +63,7 @@ export const login= async (req, res) => {
             return res.status(400).json({message: "Invalid credentials"});    
         }
         let token=Token(existsuser._id);   
-    res.cookie("token", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-        maxAge: 7 * 24 * 60 * 60 * 1000
-    });
+    res.cookie("token", token, cookieOptions);
     return res.status(200).json({user:{
         _id: existsuser._id,
         Username: existsuser.Username,
@@ -83,7 +81,12 @@ export const login= async (req, res) => {
 }
 export const logout= async (req, res) => {
     try{
-        res.clearCookie("token");
+        res.clearCookie("token", {
+            httpOnly: true,
+            secure: isProduction,
+            sameSite: isProduction ? "none" : "lax",
+            path: "/"
+        });
         return res.status(200).json({message: "User logged out successfully"});
     }catch(err){
         console.log(err);
@@ -159,12 +162,7 @@ export const googleLogin = async (req, res) => {
         }
 
         const jwtToken = Token(user._id);
-        res.cookie("token", jwtToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "strict",
-            maxAge: 7 * 24 * 60 * 60 * 1000
-        });
+        res.cookie("token", jwtToken, cookieOptions);
 
         return res.status(200).json({
             message: "Google Login Successful",

@@ -3,6 +3,7 @@ import { X, Send, Loader } from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
 import axios from 'axios'
 import io from 'socket.io-client'
+import { API_BASE, SOCKET_URL } from '../config/api'
 
 export default function MessageModal({ farmer, currentUserId, currentUsername, onClose }) {
   const { isDark } = useTheme()
@@ -26,7 +27,7 @@ export default function MessageModal({ farmer, currentUserId, currentUsername, o
     const fetchConversation = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:8000/api/messages/conversation/${farmer.farmerId}`,
+          `${API_BASE}/messages/conversation/${farmer.farmerId}`,
           { withCredentials: true }
         )
         if (response.data.success) {
@@ -44,7 +45,7 @@ export default function MessageModal({ farmer, currentUserId, currentUsername, o
 
   // Initialize Socket.IO
   useEffect(() => {
-    socketRef.current = io('http://localhost:8000')
+    socketRef.current = io(SOCKET_URL)
 
     socketRef.current.on('connect', () => {
       console.log('Connected to socket server')

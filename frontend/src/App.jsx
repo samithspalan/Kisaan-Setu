@@ -43,10 +43,14 @@ function App() {
           if (storedUserType) {
             console.log('Setting userType:', storedUserType)
             setUserType(storedUserType)
-            // Redirect to appropriate dashboard
-            const dashboard = storedUserType === 'customer' ? 'customer-dashboard' : 'farmer-dashboard'
-            window.location.hash = dashboard
-            setCurrentPage(dashboard)
+            // Respect explicit hash routes (for example login/signup),
+            // only auto-redirect when no route is specified.
+            const currentHash = window.location.hash.slice(1)
+            if (!currentHash) {
+              const dashboard = storedUserType === 'customer' ? 'customer-dashboard' : 'farmer-dashboard'
+              window.location.hash = dashboard
+              setCurrentPage(dashboard)
+            }
           }
         } else {
           console.log('User not authenticated')

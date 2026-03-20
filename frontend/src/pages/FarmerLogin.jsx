@@ -237,16 +237,12 @@ export default function FarmerLogin({ onNavigate, onLoginSuccess }) {
           <div className="text-center mt-4">
             <p className={isDark ? 'text-slate-400' : 'text-gray-600'}>
               Don't have an account?{' '}
-              <button 
-                type="button"
-                onClick={() => {
-                  console.log('Signup button clicked, navigating to farmer-signup')
-                  onNavigate('farmer-signup')
-                }}
+              <a
+                href="#farmer-signup"
                 className={`font-medium hover:underline ${isDark ? 'text-green-400 hover:text-green-300' : 'text-green-600 hover:text-green-700'}`}
               >
                 Sign up here
-              </button>
+              </a>
             </p>
           </div>
         </div>

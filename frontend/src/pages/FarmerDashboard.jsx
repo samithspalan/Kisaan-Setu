@@ -5,6 +5,7 @@ import { useTheme } from '../context/ThemeContext'
 import { useTranslation } from 'react-i18next'
 import LanguageToggle from '../components/LanguageToggle'
 import farmerBg from '../assets/farmerdashboard.png'
+import { API_BASE } from '../config/api'
 
 export default function FarmerDashboard({ onNavigate }) {
   const { isDark, toggleTheme } = useTheme()
@@ -26,7 +27,7 @@ export default function FarmerDashboard({ onNavigate }) {
   const fetchMarketData = async () => {
     setLoading(true)
     try {
-      const response = await axios.get('http://localhost:8000/api/market-prices?limit=500')
+      const response = await axios.get(`${API_BASE}/market-prices?limit=500`)
       if (response.data.success) {
         setMarketPrices(response.data.records)
       }
