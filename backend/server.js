@@ -452,6 +452,23 @@ io.on('connection', (socket) => {
   });
 });
 
+// Fallback JSON 404 for any unmatched endpoint
+app.use((req, res) => {
+    res.status(404).json({
+        success: false,
+        message: `Route not found: ${req.method} ${req.originalUrl}`
+    });
+});
+
+// Final error handler to keep all responses JSON-formatted
+app.use((err, req, res, next) => {
+    console.error('Unhandled server error:', err);
+    res.status(err.status || 500).json({
+        success: false,
+        message: err.message || 'Internal server error'
+    });
+});
+
 httpServer.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
