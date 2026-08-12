@@ -1,12 +1,12 @@
 import express from 'express';
 import Listing from '../model/Listing.js';
 import User from '../model/model.js';
-import isAuthenticated from '../middleware/authMiddleware.js';
+import isAuthenticated, { requireRole } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-// Create a new listing
-router.post('/create', isAuthenticated, async (req, res) => {
+// Create a new listing (farmers only)
+router.post('/create', isAuthenticated, requireRole('farmer'), async (req, res) => {
   try {
     const { commodity, variety, quantity, unit, expectedPrice, description, location } = req.body;
 
@@ -18,13 +18,22 @@ router.post('/create', isAuthenticated, async (req, res) => {
       });
     }
 
+    const parsedQuantity = parseFloat(quantity);
+    const parsedPrice = parseFloat(expectedPrice);
+    if (!(parsedQuantity > 0) || !(parsedPrice > 0)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Quantity and expected price must be positive numbers'
+      });
+    }
+
     const newListing = new Listing({
       farmerId: req.userID,
       commodity,
       variety: variety || '',
-      quantity: parseFloat(quantity),
+      quantity: parsedQuantity,
       unit: unit || 'kg',
-      expectedPrice: parseFloat(expectedPrice),
+      expectedPrice: parsedPrice,
       description: description || '',
       location
     });
@@ -70,8 +79,6 @@ router.get('/my-listings', isAuthenticated, async (req, res) => {
 router.get('/all', async (req, res) => {
   try {
     const listings = await Listing.find().populate('farmerId', 'Username email').sort({ createdAt: -1 });
-    
-    console.log('Fetched listings:', JSON.stringify(listings, null, 2));
 
     res.status(200).json({
       success: true,
@@ -83,24 +90,6 @@ router.get('/all', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error fetching listings',
-      error: error.message
-    });
-  }
-});
-
-// TEMP: Clear corrupted listings
-router.delete('/admin/clear-all', async (req, res) => {
-  try {
-    const result = await Listing.deleteMany({});
-    res.json({
-      success: true,
-      message: `Deleted ${result.deletedCount} listings`,
-      deletedCount: result.deletedCount
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: 'Error clearing listings',
       error: error.message
     });
   }

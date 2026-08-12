@@ -1,6 +1,7 @@
+require('dotenv').config();
 const axios = require('axios');
 
-const API_KEY = "579b464db66ec23bdd00000168192898a7804f5c78598b8f95b641a1";
+const API_KEY = process.env.API_KEY;
 const RESOURCE_ID = "9ef84268-d588-465a-a308-a864a43d0070";
 const BASE_URL = `https://api.data.gov.in/resource/${RESOURCE_ID}`;
 

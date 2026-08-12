@@ -1,13 +1,14 @@
 import { useState, useEffect, useRef } from 'react'
-import { ArrowLeft, Send, Search, MoreVertical, Home, Mail, X, Sun, Moon, Leaf, Loader, LogOut } from 'lucide-react'
-import { useTheme } from '../context/ThemeContext'
+import { Send, Search, ArrowLeft, Loader, Mail, AlertCircle } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import axios from 'axios'
 import io from 'socket.io-client'
+import AppNav from '../components/ui/AppNav'
+import Slip from '../components/ui/Slip'
 import { API_BASE, SOCKET_URL } from '../config/api'
 
-export default function CustomerChatsPage({ onBack, onNavigate }) {
-  const { isDark, toggleTheme } = useTheme()
-  const [activeLink, setActiveLink] = useState('chats')
+export default function CustomerChatsPage({ onBack, onNavigate, onLogout }) {
+  const { t } = useTranslation()
   const [selectedChat, setSelectedChat] = useState(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [messageText, setMessageText] = useState('')
@@ -16,6 +17,8 @@ export default function CustomerChatsPage({ onBack, onNavigate }) {
   const [loading, setLoading] = useState(false)
   const [sending, setSending] = useState(false)
   const [currentUserId, setCurrentUserId] = useState(null)
+  const [conversationsFailed, setConversationsFailed] = useState(false)
+  const [sendError, setSendError] = useState(false)
   const socketRef = useRef(null)
   const messagesEndRef = useRef(null)
 
@@ -32,37 +35,33 @@ export default function CustomerChatsPage({ onBack, onNavigate }) {
     const userId = localStorage.getItem('userId')
     if (userId) {
       setCurrentUserId(userId)
-      
-      // Initialize Socket.IO
-      socketRef.current = io(SOCKET_URL)
+
+      // Initialize Socket.IO — withCredentials sends the auth cookie so the
+      // server can verify identity itself rather than trusting a client-sent id.
+      socketRef.current = io(SOCKET_URL, { withCredentials: true })
 
       socketRef.current.on('connect', () => {
-        console.log('[CUSTOMER] Connected to socket server, socket ID:', socketRef.current.id)
-        socketRef.current.emit('join', userId)
-        console.log('[CUSTOMER] Emitted join event with userId:', userId)
+        socketRef.current.emit('join')
       })
 
       socketRef.current.on('receive_message', (message) => {
-        console.log('[CUSTOMER] Received message:', message)
         setMessages(prev => [...prev, message])
         // Refresh conversations list when receiving new message
         setTimeout(() => fetchConversations(), 100)
       })
 
       socketRef.current.on('message_sent', (message) => {
-        console.log('[CUSTOMER] Message sent:', message)
         setMessages(prev => [...prev, message])
         // Refresh conversations list after sending
         setTimeout(() => fetchConversations(), 100)
       })
 
       socketRef.current.on('message_error', (error) => {
-        console.error('[CUSTOMER] Message error:', error)
-        alert('Failed to send message: ' + error.error)
+        console.error('Message error:', error)
+        setSendError(true)
       })
 
       socketRef.current.on('conversation_updated', () => {
-        console.log('[CUSTOMER] Conversation updated event received, refreshing list...')
         fetchConversations()
       })
 
@@ -88,14 +87,18 @@ export default function CustomerChatsPage({ onBack, onNavigate }) {
 
       // Fetch all conversations
       fetchConversations()
-      
-      // Poll for new conversations every 3 seconds (backup for real-time)
-      const pollInterval = setInterval(() => {
-        fetchConversations()
-      }, 3000)
+
+      // The socket already pushes `conversation_updated`, so the old 3s
+      // poll was ~1,200 redundant requests an hour against a buyer's
+      // metered mobile data. Refresh on tab-visible instead, which
+      // covers a socket that dropped while the phone was asleep.
+      const onVisible = () => {
+        if (document.visibilityState === 'visible') fetchConversations()
+      }
+      document.addEventListener('visibilitychange', onVisible)
 
       return () => {
-        clearInterval(pollInterval)
+        document.removeEventListener('visibilitychange', onVisible)
         if (socketRef.current) {
           socketRef.current.disconnect()
         }
@@ -111,19 +114,16 @@ export default function CustomerChatsPage({ onBack, onNavigate }) {
 
   const fetchConversations = async () => {
     try {
-      console.log('[CUSTOMER] Fetching conversations...')
       const response = await axios.get(`${API_BASE}/messages/conversations`, {
         withCredentials: true
       })
-      console.log('[CUSTOMER] Conversations response:', response.data)
       if (response.data.success) {
-        console.log('[CUSTOMER] Setting conversations:', response.data.conversations.length, 'conversations')
         setConversations(response.data.conversations)
-      } else {
-        console.log('[CUSTOMER] No success in response')
+        setConversationsFailed(false)
       }
     } catch (error) {
-      console.error('[CUSTOMER] Error fetching conversations:', error)
+      console.error('Error fetching conversations:', error)
+      setConversationsFailed(true)
     }
   }
 
@@ -155,22 +155,20 @@ export default function CustomerChatsPage({ onBack, onNavigate }) {
   const handleSendMessage = () => {
     if (messageText.trim() && selectedChat && currentUserId) {
       setSending(true)
+      setSendError(false)
       const messageData = {
         senderId: currentUserId,
         receiverId: selectedChat.id,
         message: messageText
       }
 
-      console.log('[CUSTOMER] Sending message:', messageData)
       // Send via Socket.IO
       socketRef.current.emit('send_message', messageData)
       setMessageText('')
       setSending(false)
-      
+
       // Refresh conversations list to show new conversation
       setTimeout(() => fetchConversations(), 500)
-    } else {
-      console.log('[CUSTOMER] Cannot send message - missing data:', { messageText, selectedChat, currentUserId })
     }
   }
 
@@ -178,231 +176,151 @@ export default function CustomerChatsPage({ onBack, onNavigate }) {
     conv.otherUser?.Username?.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
+  const navLinks = [
+    { id: 'home', label: t('dash.navHome'), href: 'customer-dashboard', onClick: (e) => { e.preventDefault(); onNavigate('customer-dashboard') } },
+    { id: 'chats', label: t('dash.navChats'), href: 'chats', onClick: (e) => e.preventDefault() },
+  ]
+
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${isDark ? 'bg-slate-900 text-slate-100' : 'bg-linear-to-b from-teal-50 via-white to-teal-50'}`}>
-      {/* Logo */}
-      <div className="fixed top-6 left-6 z-40 flex items-center gap-2">
-        <Leaf className="w-8 h-8 text-teal-600" />
-        <div>
-          <h1 className={`text-xl font-bold leading-none transition-colors duration-300 ${
-            isDark ? 'text-slate-100' : 'text-teal-950'
-          }`}>KisanSetu</h1>
-          <span className={`text-[10px] uppercase tracking-wider font-bold transition-colors duration-300 ${
-            isDark ? 'text-teal-400' : 'text-teal-600'
-          }`}>Customer</span>
-        </div>
-      </div>
+    <div className="ledger-scope flex min-h-screen flex-col bg-paper">
+      <AppNav links={navLinks} active="chats" onLogout={onLogout || onBack} />
 
-      {/* Navigation Bar - Centered at top, floating */}
-      <nav className="fixed top-6 left-1/2 transform -translate-x-1/2 z-40 w-auto max-w-[90%] flex items-center gap-4">
-        <div className={`backdrop-blur-2xl rounded-full px-2 py-1.5 shadow-2xl transition-colors duration-300 ${
-          isDark
-            ? 'bg-linear-to-r from-slate-800/40 via-slate-700/30 to-slate-800/40 border border-slate-600/30'
-            : 'bg-linear-to-r from-teal-50/20 via-white/10 to-teal-50/20 border border-teal-200/30'
-        }`}>
-          <div className="flex gap-1 items-center">
-            {[
-              { id: 'home', label: 'Home', icon: Home },
-              { id: 'chats', label: 'Chats', icon: Mail },
-              { id: 'theme', label: '', icon: isDark ? Sun : Moon, isButton: true },
-              { id: 'logout', label: 'Logout', icon: LogOut, isButton: true }
-            ].map(item => (
-              <button
-                key={item.id}
-                onClick={() => {
-                  if (item.id === 'theme') {
-                    toggleTheme()
-                  } else if (item.id === 'logout' && onBack) {
-                    onBack()
-                  } else if (item.id === 'home' && onNavigate) {
-                    onNavigate('customer-dashboard')
-                  } else if (item.id === 'chats') {
-                    setActiveLink(item.id)
-                  }
-                }}
-                className={`flex items-center gap-2 font-semibold transition-all duration-300 px-6 py-3.5 rounded-full text-sm ${
-                  !item.isButton && activeLink === item.id
-                    ? isDark
-                      ? 'bg-linear-to-r from-teal-600 to-teal-500 text-white shadow-lg shadow-teal-600/40'
-                      : 'bg-linear-to-r from-teal-500 to-teal-400 text-white shadow-lg shadow-teal-500/40'
-                    : !item.isButton && activeLink !== item.id
-                    ? isDark
-                      ? 'text-slate-300 hover:text-teal-400 hover:bg-slate-700/30'
-                      : 'text-slate-600 hover:text-teal-600 hover:bg-white/30'
-                    : item.id === 'theme'
-                    ? isDark
-                      ? 'text-yellow-400 hover:text-yellow-300 hover:bg-slate-700/30'
-                      : 'text-amber-500 hover:text-amber-600 hover:bg-white/30'
-                    : item.id === 'logout'
-                    ? isDark
-                      ? 'text-red-400 hover:text-red-300 hover:bg-red-900/20'
-                      : 'text-red-600 hover:text-red-700 hover:bg-red-50/30'
-                    : ''
-                }`}
-              >
-                <item.icon className="w-4 h-4" />
-                {item.label && item.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </nav>
-
-      {/* Top Spacing for fixed navbar */}
-      <div className="h-24"></div>
-
-      {/* Main Chat Area */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 min-h-[calc(100vh-160px)] flex gap-6">
-        {/* Chat List */}
-        <div className={`w-full md:w-96 lg:w-1/3 rounded-2xl shadow-lg overflow-hidden flex flex-col ${
-          isDark ? 'bg-slate-800' : 'bg-white'
-        } ${selectedChat ? 'hidden md:flex' : ''}`}>
-          {/* Search */}
-          <div className={`p-4 border-b ${isDark ? 'border-slate-700/50' : 'border-slate-200'}`}>
+      <div className="mx-auto flex w-full max-w-6xl flex-1 gap-6 px-8 py-8 sm:pl-16">
+        {/* Conversation list */}
+        <Slip className={`flex w-full flex-col overflow-hidden md:w-96 ${selectedChat ? 'hidden md:flex' : ''}`}>
+          <div className="border-b border-ink/10 p-4">
             <div className="relative">
-              <Search className={`absolute left-3 top-3 w-5 h-5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`} />
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink/40" />
               <input
                 type="text"
-                placeholder="Search sellers..."
+                placeholder={t('chat.searchSellers')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className={`w-full pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-600 transition-all border-0 ${
-                  isDark
-                    ? 'bg-slate-700 text-slate-100 placeholder-slate-400'
-                    : 'bg-slate-100 text-slate-900 placeholder-slate-600'
-                }`}
+                className="w-full rounded-sm border border-ink/15 bg-paper py-2 pl-9 pr-3 font-body text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-maroon/40"
               />
             </div>
           </div>
 
-          {/* Chat List Items */}
           <div className="flex-1 overflow-y-auto">
             {filteredConversations.length > 0 ? (
               filteredConversations.map(conv => (
                 <button
                   key={conv.otherUser._id}
                   onClick={() => fetchConversation(conv.otherUser._id, conv.otherUser.Username, conv.otherUser.email)}
-                  className={`w-full p-4 border-b ${isDark ? 'border-slate-700/30' : 'border-slate-200/50'} transition-all text-left ${isDark ? 'hover:bg-slate-700/50' : 'hover:bg-slate-50'} ${selectedChat?.id === conv.otherUser._id ? (isDark ? 'bg-slate-700/50' : 'bg-teal-50') : ''}`}
+                  className={`w-full border-b border-ink/10 p-4 text-left transition-colors hover:bg-paper-dim ${
+                    selectedChat?.id === conv.otherUser._id ? 'bg-maroon/5' : ''
+                  }`}
                 >
                   <div className="flex items-start gap-3">
-                    <div className="text-3xl shrink-0">🌾</div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2 mb-1">
-                        <h3 className={`font-bold truncate ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{conv.otherUser.Username}</h3>
-                        <span className={`text-xs shrink-0 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-brass/20 font-display text-sm font-semibold text-brass-dark">
+                      {conv.otherUser.Username?.[0]?.toUpperCase() || '?'}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-1 flex items-center justify-between gap-2">
+                        <h3 className="truncate font-display font-semibold leading-tight">{conv.otherUser.Username}</h3>
+                        <span className="shrink-0 text-xs text-ink/45">
                           {new Date(conv.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
-                      <p className={`text-xs mb-1 ${isDark ? 'text-slate-500' : 'text-slate-600'}`}>{conv.otherUser.email}</p>
-                      <p className={`text-sm truncate ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{conv.lastMessage.message}</p>
+                      <p className="truncate text-sm text-ink/60">{conv.lastMessage.message}</p>
                     </div>
                   </div>
                 </button>
               ))
+            ) : conversationsFailed ? (
+              <div className="flex h-full flex-col items-center justify-center p-8 text-center">
+                <AlertCircle className="mb-2 h-5 w-5 text-rule" />
+                <p className="mb-2 text-sm text-ink/60">{t('common.fetchError')}</p>
+                <button onClick={fetchConversations} className="text-sm font-semibold text-maroon hover:underline">
+                  {t('common.retry')}
+                </button>
+              </div>
             ) : (
-              <div className="flex items-center justify-center h-full p-8 text-center">
-                <p className={isDark ? 'text-slate-400' : 'text-slate-500'}>
-                  No conversations yet. Click "Message" on a farmer listing to start chatting!
-                </p>
+              <div className="flex h-full items-center justify-center p-8 text-center">
+                <p className="text-sm text-ink/50">{t('chat.noConversationsCustomer')}</p>
               </div>
             )}
           </div>
-        </div>
+        </Slip>
 
-        {/* Chat Window */}
+        {/* Chat window */}
         {selectedChat ? (
-          <div className={`flex-1 rounded-2xl shadow-lg overflow-hidden flex flex-col ${isDark ? 'bg-slate-800' : 'bg-white'}`}>
-            {/* Chat Header */}
-            <div className={`p-4 border-b ${isDark ? 'border-slate-700/50' : 'border-slate-200'} flex items-center justify-between`}>
-              <div className="flex items-center gap-3">
-                <button onClick={() => setSelectedChat(null)} className="md:hidden">
-                  <ArrowLeft className={`w-5 h-5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`} />
-                </button>
-                <div className="text-3xl">🌾</div>
-                <div>
-                  <h2 className={`font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{selectedChat.name}</h2>
-                  <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-                    {selectedChat.location || 'Farmer'}
-                  </p>
-                </div>
-              </div>
-              <button className={`p-2 rounded-lg transition-all ${isDark ? 'hover:bg-slate-700' : 'hover:bg-slate-100'}`}>
-                <MoreVertical className={`w-5 h-5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`} />
+          <Slip className="flex flex-1 flex-col overflow-hidden">
+            <div className="flex items-center gap-3 border-b border-ink/10 bg-paper-dim p-4">
+              <button onClick={() => setSelectedChat(null)} aria-label={t('common.back')} className="md:hidden">
+                <ArrowLeft className="h-5 w-5 text-ink/60" />
               </button>
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-brass/20 font-display text-sm font-semibold text-brass-dark">
+                {selectedChat.name?.[0]?.toUpperCase() || '?'}
+              </div>
+              <div>
+                <h2 className="font-display font-semibold leading-tight">{selectedChat.name}</h2>
+                <p className="text-xs text-ink/50">{selectedChat.location || t('chat.farmerLabel')}</p>
+              </div>
             </div>
 
-            {/* Messages */}
-            <div className={`flex-1 overflow-y-auto p-4 space-y-4 ${isDark ? 'bg-slate-800/50' : 'bg-slate-50'}`}>
+            <div className="flex-1 space-y-3 overflow-y-auto bg-paper p-4">
               {loading ? (
-                <div className="flex items-center justify-center h-full">
-                  <Loader className="w-6 h-6 animate-spin text-teal-600" />
+                <div className="flex h-full items-center justify-center">
+                  <Loader className="h-6 w-6 animate-spin text-maroon" />
                 </div>
               ) : messages.length > 0 ? (
                 messages.map((msg, idx) => (
                   <div key={idx} className={`flex ${msg.senderId._id === currentUserId ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-xs px-4 py-2 rounded-2xl ${
-                      msg.senderId._id === currentUserId
-                        ? isDark
-                          ? 'bg-teal-600 text-white'
-                          : 'bg-teal-600 text-white'
-                        : isDark
-                        ? 'bg-slate-700 text-slate-100'
-                        : 'bg-slate-100 text-slate-900'
+                    <div className={`max-w-xs rounded-sm px-4 py-2 ${
+                      msg.senderId._id === currentUserId ? 'bg-maroon text-paper' : 'bg-paper-dim text-ink'
                     }`}>
                       <p className="text-sm">{msg.message}</p>
-                      <p className={`text-xs mt-1 ${msg.senderId._id === currentUserId ? 'text-teal-100' : isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                      <p className={`mt-1 text-xs ${msg.senderId._id === currentUserId ? 'text-paper/70' : 'text-ink/50'}`}>
                         {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="flex flex-col items-center justify-center h-full space-y-3 p-8">
-                  <div className="text-5xl mb-2">💬</div>
-                  <p className={`text-lg font-semibold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                    Start conversation with {selectedChat.name}
-                  </p>
-                  <p className={`text-sm text-center max-w-md ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                    Send a message to begin your chat. They'll be notified instantly!
-                  </p>
+                <div className="flex h-full flex-col items-center justify-center space-y-2 p-8 text-center">
+                  <Mail className="h-8 w-8 text-ink/25" />
+                  <p className="font-semibold text-ink/70">{t('chat.startConversation', { name: selectedChat.name })}</p>
+                  <p className="max-w-md text-sm text-ink/50">{t('chat.startConversationSub')}</p>
                 </div>
               )}
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Message Input */}
-            <div className={`p-4 border-t ${isDark ? 'border-slate-700/50' : 'border-slate-200'}`}>
+            <div className="border-t border-ink/10 p-4">
+              {sendError && (
+                <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-rule">
+                  <AlertCircle className="h-3.5 w-3.5 shrink-0" /> {t('common.fetchError')}
+                </p>
+              )}
               <div className="flex gap-2">
                 <input
                   type="text"
-                  placeholder="Type your message..."
+                  placeholder={t('chat.messagePlaceholder')}
                   value={messageText}
                   onChange={(e) => setMessageText(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                   disabled={sending}
-                  className={`flex-1 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-600 transition-all border-0 ${
-                    isDark
-                      ? 'bg-slate-700 text-slate-100 placeholder-slate-400'
-                      : 'bg-slate-100 text-slate-900 placeholder-slate-600'
-                  }`}
+                  className="flex-1 rounded-sm border border-ink/15 bg-paper px-4 py-2 font-body text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-maroon/40"
                 />
                 <button
                   onClick={handleSendMessage}
                   disabled={sending || !messageText.trim()}
-                  className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg transition-all flex items-center gap-2 disabled:opacity-50"
+                  aria-label={t('chat.send')}
+                  className="flex items-center gap-2 rounded-sm bg-maroon px-4 py-2 text-paper transition-colors hover:bg-maroon-dark disabled:opacity-50"
                 >
-                  {sending ? <Loader className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  {sending ? <Loader className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                 </button>
               </div>
             </div>
-          </div>
+          </Slip>
         ) : (
-          <div className={`flex-1 rounded-2xl shadow-lg flex items-center justify-center ${isDark ? 'bg-slate-800' : 'bg-white'}`}>
+          <Slip className="hidden flex-1 items-center justify-center md:flex">
             <div className="text-center">
-              <Mail className={`w-12 h-12 mx-auto mb-4 opacity-50 ${isDark ? 'text-slate-400' : 'text-slate-400'}`} />
-              <p className={`font-semibold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Select a seller to start chatting</p>
+              <Mail className="mx-auto mb-4 h-10 w-10 text-ink/25" />
+              <p className="font-semibold text-ink/60">{t('chat.selectSeller')}</p>
             </div>
-          </div>
+          </Slip>
         )}
       </div>
     </div>

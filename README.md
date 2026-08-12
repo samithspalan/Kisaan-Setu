@@ -58,6 +58,8 @@ This approach transforms KisanSetu into a market intelligence and access platfor
 - React (Vite)
 - Node.js
 - Express.js
+- Socket.IO (real-time chat)
+- i18next (multi-language support)
 
 ### Databases
 - MongoDB
@@ -100,5 +102,24 @@ This approach transforms KisanSetu into a market intelligence and access platfor
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/samithspalan/Stack-Overlords.git
-   cd Stack-Overlords
+   git clone https://github.com/samithspalan/Stack_Overlords.git
+   cd Stack_Overlords
+   ```
+
+2. **Backend setup:**
+   ```bash
+   cd backend
+   npm install
+   cp .env.example .env   # fill in your own MongoDB URI, JWT secret, and API keys
+   npm run dev            # http://localhost:5000
+   ```
+
+3. **Frontend setup:**
+   ```bash
+   cd frontend
+   npm install
+   cp .env.example .env   # point at your backend origin if different from the default
+   npm run dev            # http://localhost:5173
+   ```
+
+See [QUICK_START.md](QUICK_START.md) for a walkthrough and [backend/API_DOCUMENTATION.md](backend/API_DOCUMENTATION.md) for the full API reference.

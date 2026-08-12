@@ -1,0 +1,21 @@
+# Local tooling / editor agent config
+.claude/
+
+# Environment files — never commit real credentials.
+# Use backend/.env.example and frontend/.env.example as templates.
+.env
+.env.local
+.env.*.local
+
+# Dependencies and build output
+node_modules/
+dist/
+build/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS noise
+.DS_Store
+Thumbs.db

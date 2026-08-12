@@ -1,271 +1,95 @@
-# Quick Start Guide - KisanSetu Backend & Auth
+# Quick Start Guide — KisanSetu
 
-## ⚡ 5-Minute Setup
+## Setup
 
-### Prerequisites
-- Node.js installed
-- MongoDB Atlas account (already configured)
-- Both frontend and backend folders
-
-### Step 1: Start Backend
+### 1. Backend
 ```bash
 cd backend
+npm install
+cp .env.example .env   # then fill in real values (Mongo URI, JWT secret, API keys)
 npm run dev
 ```
-
 Expected output:
 ```
 Server running on port 5000
 MongoDB Connected
 ```
+The server exits immediately with a clear error if `MONGO_URI` or `JWT_SECRET` is missing from `.env`.
 
-### Step 2: Start Frontend
+### 2. Frontend
 ```bash
 cd frontend
+npm install
+cp .env.example .env   # point at your backend origin if not the default
 npm run dev
 ```
-
 Expected output:
 ```
-VITE v5.x.x ready in x ms
-
+VITE ready in x ms
 ➜  Local:   http://localhost:5173
 ```
 
-### Step 3: Test Authentication
+### 3. Try it out
 1. Open http://localhost:5173
-2. Click "Farmer Login" or "Farmer Signup"
-3. Sign up with test credentials:
-   - Email: test@farm.com
-   - Password: test123456
-4. You should be logged in and can navigate to dashboard
+2. Sign up as a **Farmer** or a **Customer** — the role you pick at signup is what's stored server-side; it can't be changed later by editing browser storage
+3. As a farmer: create a crop listing, view it from a customer account, and chat between the two accounts
+4. Log out / log back in and confirm you land on the correct dashboard for your role
 
 ---
 
-## 📋 Key Features
+## Key features
 
-### Authentication
-- ✅ Email/Password signup and login
-- ✅ Secure JWT tokens (7 day expiration)
-- ✅ Google OAuth integration
-- ✅ Protected routes with middleware
-
-### Frontend Integration
-- ✅ Real API calls to backend
-- ✅ Error message display
-- ✅ Loading states on buttons
-- ✅ Dark/Light theme support
-- ✅ Automatic cookie handling
-
-### Market Data
-- ✅ Real commodity price data
-- ✅ Market analysis and trends
-- ✅ Multiple states and districts
+- Email/password + Google OAuth signup and login, with a server-enforced `farmer`/`customer` role
+- Crop listings (create/update/delete by the owning farmer, browsable by anyone)
+- Real-time chat between farmers and customers (Socket.IO, with HTTP fallback)
+- Market price lookups (data.gov.in, with a database fallback) and Gemini-based crop analysis
+- Dark/light theme, i18n (multiple languages)
 
 ---
 
-## 🔗 API Endpoints
+## API endpoints
 
-### Authentication
-```
-POST   /api/auth/signup      - Register new account
-POST   /api/auth/login       - Login with email/password
-POST   /api/auth/logout      - Logout and clear token
-GET    /api/auth/me          - Get current user (requires login)
-POST   /api/auth/google      - Google OAuth login
-```
+See `backend/API_DOCUMENTATION.md` for the full reference. Highlights:
 
-### Market Data
 ```
-GET    /api/market-prices    - Get commodity prices with filters
-POST   /api/store-crop-prices - Admin endpoint to update prices
+POST /api/auth/signup          { Username, email, password, role }
+POST /api/auth/login           { email, password }
+POST /api/auth/logout
+GET  /api/auth/me
+PUT  /api/auth/me              { Username?, email?, password? }
+POST /api/auth/google          { token, role }
+
+GET    /api/listings/all
+POST   /api/listings/create    (auth required)
+GET    /api/listings/my-listings (auth required)
+PUT    /api/listings/:id       (auth required, owner only)
+DELETE /api/listings/:id       (auth required, owner only)
+
+GET  /api/messages/conversations   (auth required)
+GET  /api/messages/conversation/:otherUserId (auth required)
+
+GET  /api/market-prices?limit=&date=&state=&commodity=
 ```
 
 ---
 
-## 🧪 Test API Calls
+## Debugging
 
-### Using REST Client (VS Code Extension)
+### Backend won't start
+- Read the console error — it now tells you exactly which env var is missing
+- Verify `MONGO_URI` points at a reachable database
 
-Create a file `test.http` in backend folder:
+### Login/auth issues
+- Check the `token` cookie in DevTools → Application → Cookies → localhost:5000
+- `/api/auth/me` should return `{ user: { ..., role } }` with no password field
 
-```http
-### SIGNUP
-POST http://localhost:5000/api/auth/signup
-Content-Type: application/json
-
-{
-  "Username": "Raj Kumar",
-  "email": "raj@farm.com",
-  "password": "test123456"
-}
-
-### LOGIN
-POST http://localhost:5000/api/auth/login
-Content-Type: application/json
-
-{
-  "email": "raj@farm.com",
-  "password": "test123456"
-}
-
-### GET CURRENT USER
-GET http://localhost:5000/api/auth/me
-
-### GET MARKET PRICES
-GET http://localhost:5000/api/market-prices?limit=10
-
-### LOGOUT
-POST http://localhost:5000/api/auth/logout
-```
-
-Then click "Send Request" above each call.
+### Frontend can't reach backend
+- Confirm the backend is running and `FRONTEND_ORIGIN` (backend `.env`) includes your frontend's origin
+- Confirm `VITE_API_ORIGIN` (frontend `.env`) points at the backend
 
 ---
 
-## 🎨 Frontend Features
+## Notes
 
-### Dark Mode
-- Toggle in top right corner of any page
-- Persists across sessions
-- Applied to all pages
-
-### Login Page
-- Email/password input fields
-- Google OAuth button
-- Error message display
-- Link to signup page
-- Responsive design
-
-### Signup Page
-- Name, email, password fields
-- Password confirmation
-- Terms & conditions checkbox
-- Error handling
-- Success message with redirect
-
----
-
-## 🛠️ Configuration
-
-### .env File (Backend)
-```
-JWT_SECRET=abhd7755                    # Secret for JWT signing
-PORT=5000                              # Backend port
-NODE_ENV=development                   # Environment
-MONGO_URI=mongodb+srv://...            # Database connection
-```
-
-### Database
-- Provider: MongoDB Atlas
-- Database: Farmers_db
-- Connection: Already configured in .env
-
-### CORS
-- Allowed origin: http://localhost:5173
-- Credentials: Enabled for cookies
-
----
-
-## 📱 Browser Testing
-
-### Chrome DevTools
-1. Open DevTools (F12)
-2. Go to **Application** tab
-3. Check **Cookies** → localhost:5000
-4. You should see `token` cookie after login
-5. Check **Console** for any errors
-
-### Network Tab
-1. Go to **Network** tab
-2. Perform login
-3. Look for POST /api/auth/login request
-4. Check response status (should be 200)
-5. Check "Set-Cookie" header contains `token`
-
----
-
-## 🔍 Debugging
-
-### If Login Fails
-1. Check backend console for errors
-2. Verify email/password are correct
-3. Check browser console for network errors
-4. Look at Network tab to see response
-
-### If Token Not Persisting
-1. Check CORS allows credentials
-2. Verify browser cookies are enabled
-3. Check that credentials: 'include' in authService
-
-### If API Not Responding
-1. Verify backend is running on port 5000
-2. Check MongoDB connection
-3. Look at backend console logs
-4. Verify .env file has correct values
-
----
-
-## 📚 Documentation
-
-- **API Docs**: `backend/API_DOCUMENTATION.md`
-- **Full Setup**: `BACKEND_SETUP_SUMMARY.md`
-- **Code Comments**: In `authService.js` with examples
-
----
-
-## ✅ What's Already Done
-
-- ✅ Backend server configured and running
-- ✅ MongoDB connected
-- ✅ JWT authentication implemented
-- ✅ Frontend integrated with real API
-- ✅ Error handling on forms
-- ✅ Dark/Light theme support
-- ✅ Protected routes with middleware
-- ✅ Google OAuth setup
-- ✅ Complete documentation
-
----
-
-## 🎯 Common Tasks
-
-### Reset Password
-Currently not implemented. To test:
-1. Sign up with new email
-2. Or login with: test@farm.com / test123456
-
-### Clear All Data
-MongoDB is cloud-based, so data persists. To reset:
-1. Contact database admin
-2. Or create new test email each time
-
-### Test Google OAuth
-1. Login with Google button on page
-2. Requires proper Google credentials setup
-3. Should auto-create account on first login
-
----
-
-## 💡 Tips
-
-- Always keep backend running before accessing frontend
-- Use `npm run dev` for development (auto-reload)
-- Use `npm start` for production
-- Check browser console for frontend errors
-- Check backend terminal for server errors
-- JWT tokens expire after 7 days (need to login again)
-
----
-
-## 🚀 You're All Set!
-
-The backend is fully operational with:
-- ✅ Authentication system
-- ✅ API routes
-- ✅ Database integration
-- ✅ Frontend integration
-- ✅ Error handling
-- ✅ Theme support
-
-**Start building!** 🌾
+- Never commit a real `.env` file — only `.env.example` with placeholder values should be tracked
+- JWTs expire after 7 days

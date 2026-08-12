@@ -1,199 +1,94 @@
-import { Sprout, Linkedin, Github, Leaf, Sun, Moon } from 'lucide-react'
-import { useState } from 'react'
-import { useTheme } from '../context/ThemeContext'
+import { Linkedin, Github } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import Navbar from '../components/ui/Navbar'
+import Footer from '../components/ui/Footer'
+import Slip from '../components/ui/Slip'
 import profile1 from '../assets/profile1.jpeg'
 import profile2 from '../assets/profile2.jpg'
 import profile3 from '../assets/profile3.jpeg'
 import profile4 from '../assets/profile4.jpeg'
 
-export default function AboutPage() {
-  const { isDark, toggleTheme } = useTheme()
-  const [activeLink, setActiveLink] = useState('about')
+const teamMembers = [
+  { id: 1, name: 'Harikishan Alva B', linkedin: 'https://www.linkedin.com/in/harikishan-alva-b-2163a5293/', github: 'https://github.com/HARIKISHAN-ALVA-B', image: profile1 },
+  { id: 2, name: 'Samith S Palan', linkedin: 'https://www.linkedin.com/in/samith-s-palan-695868291', github: 'https://github.com/samithspalan', image: profile2 },
+  { id: 3, name: 'Akshay', linkedin: 'https://www.linkedin.com/in/akshay-kumar-738245293', github: 'https://github.com/akshay123kumar-coder', image: profile3 },
+  { id: 4, name: 'Nishit S K', linkedin: 'https://www.linkedin.com/in/nishit-s-k-441141293', github: 'https://github.com/NishitSK', image: profile4 },
+]
 
-  const teamMembers = [
-    { id: 1, name: 'Harikishan alva b', role: 'Team Member', linkedin: 'https://www.linkedin.com/in/harikishan-alva-b-2163a5293/', github: 'https://github.com/HARIKISHAN-ALVA-B', image: profile1 },
-    { id: 2, name: 'samith s palan', role: 'Team Member', linkedin: 'https://www.linkedin.com/in/samith-s-palan-695868291', github: 'https://github.com/samithspalan', image: profile2 },
-    { id: 3, name: 'Akshay', role: 'Team Member', linkedin: 'https://www.linkedin.com/in/akshay-kumar-738245293', github: 'https://github.com/akshay123kumar-coder', image: profile3 },
-    { id: 4, name: 'Nisith SK', role: 'Team Member', linkedin: 'https://www.linkedin.com/in/nishit-s-k-441141293?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app', github: 'https://github.com/NishitSK', image: profile4 },
-  ]
+export default function AboutPage() {
+  const { t } = useTranslation()
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${
-      isDark ? 'bg-slate-900 text-slate-100' : 'bg-slate-50 text-slate-900'
-    }`}>
-      {/* Logo - Fixed in top-left corner */}
-      <div className="fixed top-6 left-6 z-50 flex items-center gap-2">
-        <Sprout className="w-8 h-8 text-green-600" />
-        <h2 className={`text-2xl font-bold ${isDark ? 'text-green-400' : 'text-green-700'}`}>KisanSetu</h2>
-      </div>
+    <div className="ledger-scope min-h-screen bg-paper">
+      <Navbar />
 
-      {/* Navigation Bar - Centered at top, sticky, transparent */}
-      <nav className="fixed top-4 left-1/2 transform -translate-x-1/2 z-40 flex items-center gap-4">
-        <div className={`backdrop-blur-md rounded-full px-6 py-2 shadow-lg border transition-colors duration-300 ${
-          isDark
-            ? 'bg-slate-800/80 border-slate-700/20'
-            : 'bg-white/80 border-white/20'
-        }`}>
-          <div className="flex gap-8 items-center">
-            <a 
-              href="#home" 
-              onClick={() => setActiveLink('home')}
-              className={`font-medium transition-all duration-300 px-3 py-2 rounded-lg ${
-                activeLink === 'home' ? 'bg-green-600 text-white' : isDark ? 'text-slate-300 hover:text-green-400' : 'text-gray-700 hover:text-green-600'
-              }`}
-            >
-              Home
-            </a>
-            <a 
-              href="#about" 
-              onClick={() => setActiveLink('about')}
-              className={`font-medium transition-all duration-300 px-3 py-2 rounded-lg ${
-                activeLink === 'about' ? 'bg-green-600 text-white' : isDark ? 'text-slate-300 hover:text-green-400' : 'text-gray-700 hover:text-green-600'
-              }`}
-            >
-              About
-            </a>
-            <a 
-              href="#features" 
-              onClick={() => setActiveLink('features')}
-              className={`font-medium transition-all duration-300 px-3 py-2 rounded-lg ${
-                activeLink === 'features' ? 'bg-green-600 text-white' : isDark ? 'text-slate-300 hover:text-green-400' : 'text-gray-700 hover:text-green-600'
-              }`}
-            >
-              Features
-            </a>
-            <a 
-              href="#contact" 
-              onClick={() => setActiveLink('contact')}
-              className={`font-medium transition-all duration-300 px-3 py-2 rounded-lg ${
-                activeLink === 'contact' ? 'bg-green-600 text-white' : isDark ? 'text-slate-300 hover:text-green-400' : 'text-gray-700 hover:text-green-600'
-              }`}
-            >
-              Contact
-            </a>
-          </div>
+      <section className="ledger-rule bg-maroon text-paper">
+        <div className="mx-auto max-w-6xl px-8 py-14 sm:pl-16">
+          <p className="font-ledger text-xs uppercase tracking-[0.2em] text-brass-light">
+            {t('about.eyebrow')}
+          </p>
+          <h1 className="mt-4 max-w-2xl font-display text-4xl font-semibold leading-[1.05] sm:text-5xl">
+            {t('about.title')}
+          </h1>
+          <p className="mt-6 max-w-xl text-lg text-paper/80">
+            {t('about.subtitle')}
+          </p>
         </div>
-        {/* Theme Toggle Button */}
-        <button
-          onClick={toggleTheme}
-          className={`p-2 rounded-full transition-all duration-300 backdrop-blur-md shadow-lg border ${
-            isDark
-              ? 'bg-slate-800 text-yellow-400 hover:bg-slate-700 border-slate-700'
-              : 'bg-white text-slate-700 hover:bg-slate-100 border-white/20'
-          }`}
-          title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-        >
-          {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-        </button>
-      </nav>
+      </section>
 
-      {/* Top Spacing for fixed navbar */}
-      <div className="h-24"></div>
-
-
-      {/* Team Section */}
-      <section className="relative py-16 z-10 px-4">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-4xl font-bold text-center mb-12 text-transparent bg-clip-text bg-linear-to-r from-emerald-600 via-green-500 to-teal-600 animate-pulse">
-            Meet The Minds
-          </h2>
-
-          {/* Team Members */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+      <section className="ledger-rule bg-paper">
+        <div className="mx-auto max-w-6xl px-8 py-14 sm:pl-16">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {teamMembers.map((member) => (
-              <div 
-                key={member.id}
-                className={`group relative h-80 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden border perspective-[1000px] ${
-                  isDark ? 'border-slate-700' : 'border-slate-100'
-                }`}
-              >
-                <div className="absolute inset-0 transition-transform duration-500 transform-3d group-hover:transform-[rotateY(180deg)]">
-                  {/* Front Side */}
-                  <div className="absolute inset-0 bg-white rounded-2xl overflow-hidden backface-hidden">
-                    <img
-                      src={member.image}
-                      alt={member.name}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-black/10"></div>
+              <Slip key={member.id} className="flex flex-col overflow-hidden">
+                <div className="h-48 w-full overflow-hidden bg-paper-dim">
+                  <img
+                    src={member.image}
+                    alt={member.name}
+                    width="300"
+                    height="192"
+                    loading="lazy"
+                    decoding="async"
+                    className="h-full w-full object-cover grayscale transition-[filter] duration-300 hover:grayscale-0"
+                  />
+                </div>
+                <div className="flex flex-1 flex-col justify-between p-5">
+                  <div>
+                    <p className="font-ledger text-[10px] uppercase tracking-[0.16em] text-ink/45">
+                      {t('about.signatory', { number: String(member.id).padStart(2, '0') })}
+                    </p>
+                    <h3 className="mt-1 font-display text-lg font-semibold leading-tight">
+                      {member.name}
+                    </h3>
                   </div>
-
-                  {/* Back - Info */}
-                  <div className="absolute inset-0 bg-white rounded-2xl overflow-hidden backface-hidden transform-[rotateY(180deg)]">
-                    <div className="bg-linear-to-br from-emerald-500 to-green-600 p-6 relative overflow-hidden text-center h-24">
-                      <div className="absolute top-0 right-0 -mr-16 -mt-16 w-32 h-32 bg-white opacity-20 rounded-full blur-2xl"></div>
-                      <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-32 h-32 bg-black opacity-10 rounded-full blur-2xl"></div>
-                    </div>
-
-                    <div className="px-6 pb-6 pt-4 text-center">
-                      <h3 className="text-lg font-bold text-slate-900 mb-1 group-hover:text-emerald-600 transition-colors">
-                        {member.name}
-                      </h3>
-                      <p className="text-emerald-600 text-sm font-medium mb-6 uppercase tracking-wide">{member.role}</p>
-
-                      <div className="flex justify-center gap-4">
-                        <a 
-                          href={member.linkedin}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-2 rounded-full bg-slate-50 text-slate-600 hover:bg-blue-50 hover:text-blue-600 transition-all border border-slate-200"
-                        >
-                          <Linkedin className="w-4 h-4" />
-                        </a>
-                        <a 
-                          href={member.github}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-2 rounded-full bg-slate-50 text-slate-600 hover:bg-gray-800 hover:text-white transition-all border border-slate-200"
-                        >
-                          <Github className="w-4 h-4" />
-                        </a>
-                      </div>
-                    </div>
+                  <div className="mt-4 flex gap-3">
+                    <a
+                      href={member.linkedin}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`${member.name} on LinkedIn`}
+                      className="flex h-8 w-8 items-center justify-center rounded-sm border border-ink/15 text-ink/60 transition-colors hover:border-maroon hover:text-maroon"
+                    >
+                      <Linkedin className="h-4 w-4" />
+                    </a>
+                    <a
+                      href={member.github}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`${member.name} on GitHub`}
+                      className="flex h-8 w-8 items-center justify-center rounded-sm border border-ink/15 text-ink/60 transition-colors hover:border-maroon hover:text-maroon"
+                    >
+                      <Github className="h-4 w-4" />
+                    </a>
                   </div>
                 </div>
-              </div>
+              </Slip>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-[#0f172a] text-slate-300 py-12 mt-16 z-10 relative">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-3 gap-8 mb-12">
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <Leaf className="w-6 h-6 text-emerald-500" />
-                <span className="text-xl font-bold text-white">KisanSetu</span>
-              </div>
-              <p className="text-slate-400 text-sm leading-relaxed">
-                Bridging the gap between India's hardworking farmers and the modern marketplace.
-              </p>
-            </div>
-            <div>
-              <h4 className="text-white font-semibold mb-4">Quick Links</h4>
-              <ul className="space-y-2 text-sm text-slate-400">
-                <li><a href="#about" className="hover:text-emerald-400 transition">About Us</a></li>
-                <li><a href="#home" className="hover:text-emerald-400 transition">Home</a></li>
-                <li><a href="#contact" className="hover:text-emerald-400 transition">Contact</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-white font-semibold mb-4">Legal</h4>
-              <ul className="space-y-2 text-sm text-slate-400">
-                <li><a href="#" className="hover:text-emerald-400 transition">Privacy Policy</a></li>
-                <li><a href="#" className="hover:text-emerald-400 transition">Terms of Service</a></li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="border-t border-slate-800 pt-8 text-center text-slate-500 text-sm">
-            <p>&copy; 2026 KisanSetu. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   )
 }
-

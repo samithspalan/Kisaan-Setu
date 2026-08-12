@@ -56,22 +56,22 @@ export const authService = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ Username: username, email, password })
+        body: JSON.stringify({ Username: username, email, password, role: 'farmer' })
       });
 
       const result = await parseJsonSafe(response)
       if (!response.ok) {
         return toApiError(response, result, 'Signup failed')
       }
-      
+
       // Save user data to localStorage
       if (result.user) {
         localStorage.setItem('userId', result.user._id)
         localStorage.setItem('userName', result.user.Username)
         localStorage.setItem('userEmail', result.user.email)
-        console.log('[AUTH] Farmer signup - saved user to localStorage:', result.user._id)
+        localStorage.setItem('userType', result.user.role)
       }
-      
+
       return result;
     } catch (error) {
       console.error('Signup error:', error);
@@ -99,33 +99,26 @@ export const authService = {
    */
   customerSignup: async (username, email, password) => {
     try {
-      console.log('[AUTH] Customer signup request:', { username, email })
       const response = await fetch(`${API_BASE}/auth/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ Username: username, email, password })
+        body: JSON.stringify({ Username: username, email, password, role: 'customer' })
       });
-      
-      console.log('[AUTH] Response status:', response.status)
 
       const result = await parseJsonSafe(response)
       if (!response.ok) {
-        const error = toApiError(response, result, 'Signup failed')
-        console.log('[AUTH] Error response:', error)
-        return error
+        return toApiError(response, result, 'Signup failed')
       }
 
-      console.log('[AUTH] Success response:', result)
-      
       // Save user data to localStorage
       if (result.user) {
         localStorage.setItem('userId', result.user._id)
         localStorage.setItem('userName', result.user.Username)
         localStorage.setItem('userEmail', result.user.email)
-        console.log('[AUTH] Saved user to localStorage:', result.user._id)
+        localStorage.setItem('userType', result.user.role)
       }
-      
+
       return result;
     } catch (error) {
       console.error('[AUTH] Signup error:', error);
@@ -150,7 +143,6 @@ export const authService = {
    */
   farmerLogin: async (email, password) => {
     try {
-      console.log('[AUTH] Farmer login request:', { email })
       const response = await fetch(`${API_BASE}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -163,16 +155,14 @@ export const authService = {
         return toApiError(response, result, 'Login failed')
       }
 
-      console.log('[AUTH] Farmer login response:', result)
-      
       // Save user data to localStorage
       if (result.user) {
         localStorage.setItem('userId', result.user._id)
         localStorage.setItem('userName', result.user.Username)
         localStorage.setItem('userEmail', result.user.email)
-        console.log('[AUTH] Farmer login - saved to localStorage:', result.user._id)
+        localStorage.setItem('userType', result.user.role)
       }
-      
+
       return result;
     } catch (error) {
       console.error('Login error:', error);
@@ -197,7 +187,6 @@ export const authService = {
    */
   customerLogin: async (email, password) => {
     try {
-      console.log('[AUTH] Customer login request:', { email })
       const response = await fetch(`${API_BASE}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -210,16 +199,14 @@ export const authService = {
         return toApiError(response, result, 'Login failed')
       }
 
-      console.log('[AUTH] Customer login response:', result)
-      
       // Save user data to localStorage
       if (result.user) {
         localStorage.setItem('userId', result.user._id)
         localStorage.setItem('userName', result.user.Username)
         localStorage.setItem('userEmail', result.user.email)
-        console.log('[AUTH] Customer login - saved to localStorage:', result.user._id)
+        localStorage.setItem('userType', result.user.role)
       }
-      
+
       return result;
     } catch (error) {
       console.error('Login error:', error);
@@ -275,14 +262,15 @@ export const authService = {
         method: 'GET',
         credentials: 'include'
       });
-      
+
       if (!response.ok) {
-        console.log('Auth check failed with status:', response.status);
         return { user: null };
       }
 
       const data = await parseJsonSafe(response)
-      console.log('getCurrentUser response:', data);
+      if (data.user) {
+        localStorage.setItem('userType', data.user.role)
+      }
       return data;
     } catch (error) {
       console.error('Get user error:', error);
@@ -293,29 +281,60 @@ export const authService = {
   /**
    * Log in using Google OAuth token
    * @param {string} token - Google ID token from Google OAuth
+   * @param {string} role - Intended role ('farmer' or 'customer'), only used the first
+   *   time this account signs in; existing accounts keep their original role.
    * @returns {Promise<Object>} Response with user data
-   * 
+   *
    * Success Response:
    * {
-   *   "user": { "_id": "...", "Username": "...", "email": "..." }
+   *   "user": { "_id": "...", "Username": "...", "email": "...", "role": "..." }
    * }
    */
-  googleLogin: async (token) => {
+  googleLogin: async (token, role = 'farmer') => {
     try {
       const response = await fetch(`${API_BASE}/auth/google`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ token })
+        body: JSON.stringify({ token, role })
       });
       const result = await parseJsonSafe(response)
       if (!response.ok) {
         throw new Error(toApiError(response, result, 'Google login failed').message)
+      }
+      if (result.user) {
+        localStorage.setItem('userType', result.user.role)
       }
       return result;
     } catch (error) {
       console.error('Google login error:', error);
       throw error;
     }
+  },
+
+  /**
+   * Dev-only shortcut: logs in as a fixed local farmer account, creating
+   * it via signup the first time it's used against a fresh database.
+   * Goes through the real signup/login endpoints — never fabricates a
+   * client-side session — so it can't drift from the server's actual
+   * auth/role state.
+   *
+   * The import.meta.env.DEV check lives here (not just at the call
+   * site) so the credentials and this function's body are dead code
+   * that Vite's production build strips from the shipped bundle,
+   * rather than merely unreachable via the UI.
+   */
+  devLogin: async () => {
+    if (!import.meta.env.DEV) {
+      return { message: 'Dev login is not available in production.' }
+    }
+
+    const email = 'dev@kisansetu.test'
+    const password = 'DevLogin123!'
+
+    const loginResult = await authService.farmerLogin(email, password)
+    if (loginResult.user) return loginResult
+
+    return authService.farmerSignup('Dev Farmer', email, password)
   }
 };

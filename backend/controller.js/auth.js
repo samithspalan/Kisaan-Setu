@@ -13,39 +13,42 @@ const cookieOptions = {
     path: "/"
 };
 
+const VALID_ROLES = ['farmer', 'customer'];
+
 export const singUp= async (req, res) => {
     try{
-        const { Username, email, password } = req.body;
-        // let profileImage;
-        // if(req.file){
-        //     profileImage=await uploadCloudinary(req.file.path)
+        const { Username, email, password, role } = req.body;
         let existuser= await User.findOne({ email });
-        if(!Username || !email || !password){
+        if(!Username || !email || !password || !role){
             return res.status(400).json({message: "Please fill all fields"});
+        }
+        if(!VALID_ROLES.includes(role)){
+            return res.status(400).json({message: "Invalid role"});
         }
         if(existuser){
             return res.status(400).json({message: "User already exists"});
-            
+
         }
         const hashedPassword=await bcrypt.hash(password, 10);
         const user= await User.create({
             Username,
             email,
             password: hashedPassword,
-            // profileImage
+            role
         });
-     let token=Token(user._id);   
+     let token=Token(user._id, user.role);
     res.cookie("token", token, cookieOptions);
     return res.status(201).json({message: "User created successfully", user: {
         _id: user._id,
         Username: user.Username,
-        email: user.email
+        email: user.email,
+        role: user.role
     }});
     }catch(err){
         console.log(err);
         res.status(500).json({message: err.message});
     }
-     
+
 }
 export const login= async (req, res) => {
     try{
@@ -56,28 +59,27 @@ export const login= async (req, res) => {
         let existsuser= await User.findOne({ email });
         if(!existsuser){
             return res.status(400).json({message: "User does not exist"});
-            
+
         }
         let match=await bcrypt.compare(password, existsuser.password);
         if(!match){
-            return res.status(400).json({message: "Invalid credentials"});    
+            return res.status(400).json({message: "Invalid credentials"});
         }
-        let token=Token(existsuser._id);   
+        let token=Token(existsuser._id, existsuser.role);
     res.cookie("token", token, cookieOptions);
     return res.status(200).json({user:{
         _id: existsuser._id,
         Username: existsuser.Username,
         email: existsuser.email,
-        password: existsuser.password,
-        //profileImage: existsuser.profileImage
-    }});  
-       
-        
+        role: existsuser.role
+    }});
+
+
     }catch(err){
         console.log(err);
         res.status(500).json({message: err.message});
     }
-    
+
 }
 export const logout= async (req, res) => {
     try{
@@ -108,13 +110,13 @@ export const getUser= async (req, res) => {
             _id: user._id,
             Username: user.Username,
             email: user.email,
-            password: user.password,
+            role: user.role,
         }});
     }catch(err){
         console.log(err);
         res.status(500).json({message: err.message});
     }
-    
+
 }
 export const updateUser= async (req, res) => {
     try{
@@ -127,46 +129,54 @@ export const updateUser= async (req, res) => {
         if(!user){
             return res.status(400).json({message: "User not found"});
         }
-        const hashedPassword=await bcrypt.hash(password, 10);
         user.Username=Username || user.Username;
         user.email=email || user.email;
-        user.password=hashedPassword || user.password;
+        if(password){
+            user.password=await bcrypt.hash(password, 10);
+        }
         await user.save();
         return res.status(200).json({message: "User updated successfully", user:{
             _id: user._id,
             Username: user.Username,
             email: user.email,
+            role: user.role,
         }});
     }catch(err){
         console.log(err);
         res.status(500).json({message: err.message});
-    }       
+    }
 }
 
 export const googleLogin = async (req, res) => {
     try {
-        const { token } = req.body;
+        const { token, role } = req.body;
         const ticket = await client.verifyIdToken({
             idToken: token,
             audience: process.env.GOOGLE_CLIENT_ID
         });
-        const { name, email, picture } = ticket.getPayload();
+        const { name, email } = ticket.getPayload();
 
         let user = await User.findOne({ email });
         if (!user) {
+            if(!VALID_ROLES.includes(role)){
+                return res.status(400).json({ message: "Invalid role" });
+            }
             user = await User.create({
                 Username: name,
                 email,
                 password: await bcrypt.hash(Math.random().toString(36).slice(-8), 10),
+                role
             });
         }
+        // Existing users keep their originally registered role, regardless of
+        // which login form (farmer/customer) they used to sign in with Google.
 
-        const jwtToken = Token(user._id);
+        const jwtToken = Token(user._id, user.role);
         res.cookie("token", jwtToken, cookieOptions);
 
         return res.status(200).json({
             message: "Google Login Successful",
-            user: { _id: user._id, Username: user.Username, email: user.email }
+            user: { _id: user._id, Username: user.Username, email: user.email, role: user.role }
         });
     } catch (err) {
         console.error(err);

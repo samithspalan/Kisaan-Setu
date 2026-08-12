@@ -1,550 +1,216 @@
-import { 
-  Sprout, 
-  Shield, 
-  ShoppingCart, 
-  Leaf, 
-  Users, 
-  TrendingUp, 
-  Sun,
-  Moon,
-  ArrowRight,
-  HeartHandshake,
-  Truck,
-  Building2
-} from 'lucide-react'
-import { useState, useEffect, useRef } from 'react'
-import { useTheme } from '../context/ThemeContext'
+import { useEffect, useState } from 'react'
+import { ArrowRight, Sprout } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import LanguageToggle from '../components/LanguageToggle'
+import axios from 'axios'
+import Navbar from '../components/ui/Navbar'
+import Footer from '../components/ui/Footer'
+import Button from '../components/ui/Button'
+import StampBadge from '../components/ui/StampBadge'
+import LedgerTable from '../components/ui/LedgerTable'
+import { API_BASE } from '../config/api'
 
 export default function HomePage() {
-  const { isDark, toggleTheme } = useTheme()
   const { t } = useTranslation()
-  const [activeLink, setActiveLink] = useState('home')
-  const canvasRef = useRef(null)
-  const mousePos = useRef({ x: 0, y: 0 })
-  const particles = useRef([])
-  const [farmers, setFarmers] = useState(0)
-  const [volume, setVolume] = useState(0)
-  const [mandis, setMandis] = useState(0)
-  const [animateRoles, setAnimateRoles] = useState(false)
-  const [rolesAnimationKey, setRolesAnimationKey] = useState(0)
-  const rolesSectionRef = useRef(null)
+  const [liveBoard, setLiveBoard] = useState(null)
+  const [liveBoardFailed, setLiveBoardFailed] = useState(false)
+  const [platformStats, setPlatformStats] = useState(null)
 
   useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-
-    const ctx = canvas.getContext('2d')
-    let animationFrameId
-
-    const resizeCanvas = () => {
-      canvas.width = window.innerWidth
-      canvas.height = window.innerHeight
-    }
-    resizeCanvas()
-    window.addEventListener('resize', resizeCanvas)
-
-    // Initialize particles
-    particles.current = Array.from({ length: 200}, () => ({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
-      size: Math.random() * 3 + 1,
-      speedX: Math.random() * 2 - 1,
-      speedY: Math.random() * 2 - 1,
-      opacity: Math.random() * 0.5 + 0.2
-    }))
-
-    const handleMouseMove = (e) => {
-      mousePos.current = { x: e.clientX, y: e.clientY }
-    }
-    window.addEventListener('mousemove', handleMouseMove)
-
-    const animate = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
-      ctx.fillStyle = 'rgba(16, 185, 129, 0.05)'
-
-      particles.current.forEach((particle, index) => {
-        // Move towards mouse position (Attraction)
-        const dx = mousePos.current.x - particle.x
-        const dy = mousePos.current.y - particle.y
-        const distance = Math.sqrt(dx * dx + dy * dy)
-
-        if (distance < 200) {
-          particle.x += dx * 0.02
-          particle.y += dy * 0.02
-        }
-
-        // Movement
-        particle.x += particle.speedX
-        particle.y += particle.speedY
-
-        // Bounce off walls
-        if (particle.x < 0 || particle.x > canvas.width) particle.speedX *= -1
-        if (particle.y < 0 || particle.y > canvas.height) particle.speedY *= -1
-
-        // Draw particle
-        ctx.globalAlpha = particle.opacity
-        ctx.fillStyle = '#10b981'
-        ctx.beginPath()
-        ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2)
-        ctx.fill()
-
-        // Draw lines between nearby particles
-        particles.current.forEach((other, otherIndex) => {
-          if (index < otherIndex) {
-            const distX = particle.x - other.x
-            const distY = particle.y - other.y
-            const dist = Math.sqrt(distX * distX + distY * distY)
-
-            if (dist < 100) {
-              ctx.globalAlpha = (1 - dist / 100) * 0.3
-              ctx.strokeStyle = '#10b981'
-              ctx.lineWidth = 1
-              ctx.beginPath()
-              ctx.moveTo(particle.x, particle.y)
-              ctx.lineTo(other.x, other.y)
-              ctx.stroke()
-            }
-          }
-        })
+    let cancelled = false
+    axios.get(`${API_BASE}/market-prices?limit=8`)
+      .then((response) => {
+        if (cancelled || !response.data.success) return
+        setLiveBoard(response.data.records)
+      })
+      .catch(() => {
+        if (!cancelled) setLiveBoardFailed(true)
       })
 
-      ctx.globalAlpha = 1
-      animationFrameId = requestAnimationFrame(animate)
-    }
-    animate()
+    // Real counts. Failure leaves platformStats null and the whole
+    // tallies section is skipped — never fall back to invented numbers.
+    axios.get(`${API_BASE}/platform-stats`)
+      .then((response) => {
+        if (cancelled || !response.data.success) return
+        setPlatformStats(response.data)
+      })
+      .catch(() => {})
 
-    return () => {
-      window.removeEventListener('resize', resizeCanvas)
-      window.removeEventListener('mousemove', handleMouseMove)
-      cancelAnimationFrame(animationFrameId)
-    }
+    return () => { cancelled = true }
   }, [])
 
-  // Counter animation effect
-  useEffect(() => {
-    const animateCounter = (setter, target, duration = 2000) => {
-      const start = 0
-      const increment = target / (duration / 16)
-      let current = 0
+  const boardRows = liveBoard ?? []
+  const isLive = Boolean(liveBoard)
 
-      const timer = setInterval(() => {
-        current += increment
-        if (current >= target) {
-          setter(target)
-          clearInterval(timer)
-        } else {
-          setter(Math.floor(current))
-        }
-      }, 16)
+  const priceColumns = [
+    { key: 'commodity', label: t('home.colCrop'), mono: false },
+    { key: 'market', label: t('home.colMarket'), mono: false, render: (row) => `${row.market}, ${row.state}` },
+    {
+      key: 'price',
+      label: t('home.colPrice'),
+      align: 'right',
+      render: (row) => `₹${Number(row.modal_price).toLocaleString('en-IN')} / quintal`,
+    },
+  ]
 
-      return timer
-    }
-
-    const timer1 = animateCounter(setFarmers, 10000, 2000)
-    const timer2 = animateCounter(setVolume, 500, 2000)
-    const timer3 = animateCounter(setMandis, 120, 2000)
-
-    // Loop animation
-    const loopTimer = setInterval(() => {
-      setFarmers(0)
-      setVolume(0)
-      setMandis(0)
-      setTimeout(() => {
-        animateCounter(setFarmers, 10000, 2000)
-        animateCounter(setVolume, 500, 2000)
-        animateCounter(setMandis, 120, 2000)
-      }, 100)
-    }, 4000)
-
-    return () => {
-      clearInterval(timer1)
-      clearInterval(timer2)
-      clearInterval(timer3)
-      clearInterval(loopTimer)
-    }
-  }, [])
-
-  useEffect(() => {
-    const element = rolesSectionRef.current
-    if (!element) return
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setAnimateRoles(false)
-          requestAnimationFrame(() => {
-            setRolesAnimationKey((prev) => prev + 1)
-            setAnimateRoles(true)
-          })
-        } else {
-          setAnimateRoles(false)
-        }
-      },
-      { threshold: 0.4 }
-    )
-
-    observer.observe(element)
-    return () => observer.disconnect()
-  }, [])
+  // Only tiles backed by a real non-zero count are shown. An empty
+  // platform shows no tallies rather than a fabricated floor.
+  const tallies = platformStats
+    ? [
+        { label: t('home.tallyFarmers'), value: platformStats.farmers },
+        { label: t('home.tallyListings'), value: platformStats.listings, accent: true },
+        { label: t('home.tallyMandis'), value: platformStats.mandis },
+      ].filter((item) => item.value > 0)
+    : []
 
   return (
-    <div className={`min-h-screen relative overflow-hidden font-sans selection:bg-emerald-200 selection:text-emerald-900 transition-colors duration-300 ${
-      isDark 
-        ? 'bg-slate-900 text-slate-100' 
-        : 'bg-slate-50 text-slate-900'
-    }`}>
-      
-      {/* Background Canvas */}
-      <canvas 
-        ref={canvasRef}
-        className="fixed top-0 left-0 w-full h-full z-0 pointer-events-none"
+    <div className="ledger-scope min-h-screen bg-paper">
+      <Navbar
+        right={
+          <a href="#about" className="font-body text-sm text-paper/85 hover:text-paper">
+            {t('home.aboutLink')}
+          </a>
+        }
       />
 
-      {/* Glassmorphic Navigation */}
-      <div className="fixed top-2 left-4 z-50 flex items-center gap-2">
-        <Sprout className="w-8 h-8 text-emerald-600" />
-        <h2 className="text-2xl font-bold text-emerald-700">KisanSetu</h2>
-      </div>
-
-      <nav className="fixed top-4 left-1/2 transform -translate-x-1/2 z-40 flex items-center gap-4">
-        <div className={`rounded-full px-6 py-2 shadow-lg border transition-colors duration-300 ${
-          isDark
-            ? 'bg-slate-800/30 backdrop-blur-md border-slate-700/20'
-            : 'bg-white/30 backdrop-blur-md border-white/20'
-        }`}>
-          <div className="flex gap-12 items-center">
-            <a 
-              href="#home" 
-              onClick={() => setActiveLink('home')}
-              className={`font-medium transition-all duration-300 px-3 py-2 rounded-lg ${
-                activeLink === 'home' ? 'bg-green-600 text-white' : isDark ? 'text-slate-300 hover:text-green-400' : 'text-gray-700 hover:text-green-600'
-              }`}
-            >
-              {t('nav.home')}
-            </a>
-            <a 
-              href="#about" 
-              onClick={() => setActiveLink('about')}
-              className={`font-medium transition-all duration-300 px-3 py-2 rounded-lg ${
-                activeLink === 'about' ? 'bg-green-600 text-white' : isDark ? 'text-slate-300 hover:text-green-400' : 'text-gray-700 hover:text-green-600'
-              }`}
-            >
-              About
-            </a>
-            <a 
-              href="#features" 
-              onClick={(e) => {
-                e.preventDefault()
-                setActiveLink('features')
-                const element = document.getElementById('features')
-                element?.scrollIntoView({ behavior: 'smooth' })
-              }}
-              className={`font-medium transition-all duration-300 px-3 py-2 rounded-lg ${
-                activeLink === 'features' ? 'bg-green-600 text-white' : isDark ? 'text-slate-300 hover:text-green-400' : 'text-gray-700 hover:text-green-600'
-              }`}
-            >
-              Features
-            </a>
-            <a 
-              href="#contact" 
-              onClick={(e) => {
-                e.preventDefault()
-                setActiveLink('contact')
-                const element = document.getElementById('contact')
-                element?.scrollIntoView({ behavior: 'smooth' })
-              }}
-              className={`font-medium transition-all duration-300 px-3 py-2 rounded-lg ${
-                activeLink === 'contact' ? 'bg-green-600 text-white' : isDark ? 'text-slate-300 hover:text-green-400' : 'text-gray-700 hover:text-green-600'
-              }`}
-            >
-              Contact
-            </a>
-          </div>
-        </div>
-
-        {/* Language & Theme Toggle Buttons */}
-        <div className="flex items-center gap-3">
-          <LanguageToggle />
-          <button
-            onClick={toggleTheme}
-            className={`p-2 rounded-full transition-all duration-300 ${
-              isDark
-                ? 'bg-slate-800 text-yellow-400 hover:bg-slate-700'
-                : 'bg-white text-slate-700 hover:bg-slate-100'
-            } shadow-lg border ${isDark ? 'border-slate-700' : 'border-white/20'}`}
-            title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-          >
-            {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-          </button>
-        </div>
-      </nav>
-
-      {/* Hero Section */}
-      <section id="home" className="relative pt-20 pb-16 lg:pt-28 lg:pb-24 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-         
-
-          <h1 className={`text-4xl md:text-6xl lg:text-7xl font-bold mb-6 tracking-tight leading-tight ${
-            isDark ? 'text-slate-100' : 'text-slate-900'
-          }`}>
-            {t('home.heroPrimaryTitle')} <br />
-            <span className="text-transparent bg-clip-text bg-linear-to-r from-emerald-600 via-teal-500 to-emerald-600">
-              {t('home.heroSecondaryTitle')}
-            </span>
+      {/* Hero: the ledger's opening page */}
+      <section className="ledger-rule bg-maroon text-paper">
+        <div className="mx-auto max-w-6xl px-8 pb-16 pt-14 sm:pt-20 sm:pl-16">
+          <p className="font-ledger text-xs uppercase tracking-[0.2em] text-brass-light">
+            {t('home.eyebrow')}
+          </p>
+          <h1 className="mt-4 max-w-2xl font-display text-4xl font-semibold leading-[1.05] sm:text-6xl">
+            {t('home.heroLine1')}
+            <br />
+            {t('home.heroLine2')}
           </h1>
-
-          <p className={`text-lg md:text-xl mb-10 max-w-2xl mx-auto leading-relaxed ${
-            isDark ? 'text-slate-400' : 'text-slate-600'
-          }`}>
-            {t('home.heroDescription')}
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-20">
-             <button
-               onClick={() => {
-                 setActiveLink('login')
-                 const element = document.getElementById('login-section')
-                 element?.scrollIntoView({ behavior: 'smooth' })
-               }}
-               className="group bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-all shadow-xl shadow-emerald-200 hover:shadow-emerald-300 flex items-center gap-2"
-             >
-               {t('home.getStarted')}
-               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-             </button>
-             <button
-               onClick={() => {
-                 setActiveLink('features')
-                 const element = document.getElementById('features')
-                 element?.scrollIntoView({ behavior: 'smooth' })
-               }}
-               className="group bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-8 py-4 rounded-xl font-semibold text-lg transition-all hover:border-emerald-200 flex items-center gap-2"
-             >
-               {t('home.learnMore')}
-             </button>
-          </div>
-
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {[
-              { label: t('home.activeFarmers'), value: farmers, suffix: '+', icon: Users, color: 'text-blue-600', bg: isDark ? 'bg-blue-900/30' : 'bg-blue-50' },
-              { label: t('home.weeklyVolume'), value: volume, suffix: ` ${t('home.tons')}`, icon: TrendingUp, color: 'text-emerald-600', bg: isDark ? 'bg-emerald-900/30' : 'bg-emerald-50' },
-              { label: t('home.partnerMandis'), value: mandis, suffix: '+', icon: Building2, color: 'text-amber-600', bg: isDark ? 'bg-amber-900/30' : 'bg-amber-50' },
-            ].map((stat, idx) => (
-              <div key={idx} className={`rounded-2xl p-8 border shadow-sm hover:shadow-md transition-all ${
-                isDark 
-                  ? 'bg-slate-800 border-slate-700' 
-                  : 'bg-white border-slate-100'
-              }`}>
-                <div className="flex items-center justify-between pointer-events-none">
-                  <div className="text-left">
-                    <p className={`text-4xl font-bold mb-2 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-                      {stat.value.toLocaleString()}{stat.suffix}
-                    </p>
-                    <p className={`text-xs font-bold uppercase tracking-widest ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>{stat.label}</p>
-                  </div>
-                  <div className={`p-4 rounded-2xl ${stat.bg}`}>
-                    <stat.icon className={`w-8 h-8 ${stat.color}`} strokeWidth={1.5} />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* About Section */}
-      <section id="about" className="py-20 z-10 relative">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className={`text-3xl md:text-4xl font-bold mb-4 ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{t('home.aboutTitle')}</h2>
-          <p className={`text-lg leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-            {t('home.aboutDescription')}
+          <p className="mt-6 max-w-xl text-lg text-paper/80">
+            {t('home.heroSubtitle')}
           </p>
         </div>
       </section>
 
-      {/* Login Cards Section */}
-      <section
-        id="login-section"
-        ref={rolesSectionRef}
-        className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 z-10"
-      >
-        <div className="text-center mb-16">
-          <h2 className={`text-4xl md:text-5xl font-bold mb-4 ${isDark ? 'text-slate-100' : 'text-gray-900'}`}>
-            {t('home.selectRoleTitle')}
-          </h2>
-          <p className={`text-lg ${isDark ? 'text-slate-400' : 'text-gray-600'}`}>
-            {t('home.selectRoleSubtitle')}
-          </p>
-        </div>
-
-        {/* Login Cards Grid */}
-        <div key={rolesAnimationKey} className="grid md:grid-cols-2 gap-10 mb-12 max-w-4xl mx-auto">
-          {/* Farmer Card */}
-          <a href="#farmer-login" className={`group block ${animateRoles ? 'animate-slide-in-left' : 'opacity-0 -translate-x-8'}`}>
-            <div className={`h-full rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform group-hover:scale-105 overflow-hidden ${
-              isDark ? 'bg-slate-800' : 'bg-white'
-            }`}>
-              <div className="bg-linear-to-br from-green-400 to-green-600 p-8 relative overflow-hidden">
-                <div className="absolute top-0 right-0 -mr-20 -mt-20 w-40 h-40 bg-white opacity-10 rounded-full"></div>
-                <Sprout className="w-16 h-16 text-white relative z-10" strokeWidth={1.5} />
-              </div>
-              <div className="p-8">
-                <h3 className={`text-2xl font-bold mb-3 ${isDark ? 'text-slate-100' : 'text-gray-900'}`}>{t('auth.farmersLogin')}</h3>
-                <p className={`mb-6 leading-relaxed ${isDark ? 'text-slate-400' : 'text-gray-600'}`}>
-                  {t('home.farmerCardDesc')}
-                </p>
-                <button className="w-full bg-linear-to-r from-green-400 to-green-600 hover:from-green-500 hover:to-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300">
-                  {t('auth.farmersLogin')}
-                </button>
-              </div>
-            </div>
-          </a>
-            
-          {/* Customer Card */}
-          <a href="#customer-login" className={`group block ${animateRoles ? 'animate-slide-in-right' : 'opacity-0 translate-x-8'}`}>
-            <div className={`h-full rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform group-hover:scale-105 overflow-hidden ${
-              isDark ? 'bg-slate-800' : 'bg-white'
-            }`}>
-              <div className="bg-linear-to-br from-teal-400 to-teal-600 p-8 relative overflow-hidden">
-                <div className="absolute top-0 right-0 -mr-20 -mt-20 w-40 h-40 bg-white opacity-10 rounded-full"></div>
-                <ShoppingCart className="w-16 h-16 text-white relative z-10" strokeWidth={1.5} />
-              </div>
-              <div className="p-8">
-                <h3 className={`text-2xl font-bold mb-3 ${isDark ? 'text-slate-100' : 'text-gray-900'}`}>{t('auth.customerLogin')}</h3>
-                <p className={`mb-6 leading-relaxed ${isDark ? 'text-slate-400' : 'text-gray-600'}`}>
-                  {t('home.customerCardDesc')}
-                </p>
-                <button className="w-full bg-linear-to-r from-teal-400 to-teal-600 hover:from-teal-500 hover:to-teal-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300">
-                  {t('auth.customerLogin')}
-                </button>
-              </div>
-            </div>
-          </a>
-        </div>
-      </section>
-
-      {/* Features Grid */}
-      <section id="features" className="py-24 z-10 relative">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-           <div className="text-center mb-16">
-            <span className="text-emerald-600 font-semibold tracking-wider uppercase text-sm">{t('home.whyChooseUs')}</span>
-            <h2 className={`mt-2 text-3xl md:text-4xl font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{t('home.revolutionizingSupplyChain')}</h2>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[
-              { 
-                icon: HeartHandshake, 
-                title: t('home.features.fairTrade.title'), 
-                desc: t('home.features.fairTrade.desc')
-              },
-              { 
-                icon: Truck, 
-                title: t('home.features.smartLogistics.title'), 
-                desc: t('home.features.smartLogistics.desc')
-              },
-              { 
-                icon: Sun, 
-                title: t('home.features.weatherInsights.title'), 
-                desc: t('home.features.weatherInsights.desc')
-              },
-              { 
-                icon: Shield, 
-                title: t('home.features.securePayments.title'), 
-                desc: t('home.features.securePayments.desc')
-              },
-              { 
-                icon: TrendingUp, 
-                title: t('home.features.marketAnalysis.title'), 
-                desc: t('home.features.marketAnalysis.desc')
-              },
-              { 
-                icon: Sprout, 
-                title: t('home.features.sustainableGrowth.title'), 
-                desc: t('home.features.sustainableGrowth.desc')
-              }
-            ].map((feature, idx) => (
-              <div key={idx} className={`flex gap-4 p-6 rounded-2xl hover:shadow-lg transition-all duration-300 border ${
-                isDark
-                  ? 'hover:bg-slate-800 border-transparent hover:border-slate-700'
-                  : 'hover:bg-white border-transparent hover:border-slate-100'
-              }`}>
-                <div className="shrink-0">
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                    isDark ? 'bg-emerald-900/30 text-emerald-400' : 'bg-emerald-100 text-emerald-600'
-                  }`}>
-                    <feature.icon className="w-6 h-6" />
-                  </div>
-                </div>
-                <div>
-                  <h3 className={`text-xl font-bold mb-2 ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>{feature.title}</h3>
-                  <p className={`leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{feature.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer id="contact" className={`py-16 z-10 relative mt-12 transition-colors duration-300 ${
-        isDark ? 'bg-slate-950 text-slate-300' : 'bg-[#0f172a] text-slate-300'
-      }`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-4 gap-12 mb-12">
-            <div className="col-span-1 md:col-span-2">
-              <div className="flex items-center gap-2 mb-6">
-                <Leaf className="w-8 h-8 text-emerald-500" />
-                <span className="text-2xl font-bold text-white">KisanSetu</span>
-              </div>
-              <p className={`max-w-sm leading-relaxed mb-6 ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>
-                {t('home.footer.bridging')}
+      {/* The fork: sell or buy, set like two columns of a ledger */}
+      <section className="ledger-rule bg-paper">
+        <div className="mx-auto grid max-w-6xl gap-px overflow-hidden border-y border-ink/15 bg-ink/15 sm:grid-cols-2 sm:pl-16">
+          <a
+            href="#farmer-login"
+            className="group flex flex-col justify-between gap-6 bg-paper px-8 py-10 transition-colors hover:bg-paper-dim focus-visible:outline focus-visible:outline-2 focus-visible:outline-maroon focus-visible:-outline-offset-2 sm:px-10"
+          >
+            <div>
+              <p className="flex items-center gap-1.5 font-ledger text-xs uppercase tracking-[0.2em] text-leaf">
+                <Sprout className="h-3.5 w-3.5" /> {t('home.sellEyebrow')}
               </p>
-              <div className="flex gap-4">
-                {/* Social placeholders */}
-                {[1, 2, 3].map(i => (
-                  <div key={i} className={`w-10 h-10 rounded-full flex items-center justify-center hover:bg-emerald-600 transition-colors cursor-pointer ${
-                    isDark ? 'bg-slate-900' : 'bg-slate-800'
-                  }`}>
-                    <div className="w-5 h-5 bg-current rounded-sm"></div>
-                  </div>
-                ))}
-              </div>
+              <h2 className="mt-3 font-display text-2xl font-semibold sm:text-3xl">
+                {t('home.sellTitle')}
+              </h2>
+              <p className="mt-3 max-w-sm text-ink/70">
+                {t('home.sellDesc')}
+              </p>
             </div>
-            
-            <div>
-              <h4 className="text-white font-semibold text-lg mb-6">{t('home.footer.platform')}</h4>
-              <ul className="space-y-4">
-                <li><a href="#" className="hover:text-emerald-400 transition-colors">{t('home.footer.findProduce')}</a></li>
-                <li><a href="#" className="hover:text-emerald-400 transition-colors">{t('home.footer.sellCrops')}</a></li>
-                <li><a href="#" className="hover:text-emerald-400 transition-colors">{t('home.footer.marketPrices')}</a></li>
-                <li><a href="#" className="hover:text-emerald-400 transition-colors">{t('home.footer.logistics')}</a></li>
-              </ul>
-            </div>
+            <span className="inline-flex items-center gap-2 font-semibold text-leaf-dark">
+              {t('home.sellCta')}
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </span>
+          </a>
 
+          <a
+            href="#customer-login"
+            className="group flex flex-col justify-between gap-6 bg-paper px-8 py-10 transition-colors hover:bg-paper-dim focus-visible:outline focus-visible:outline-2 focus-visible:outline-maroon focus-visible:-outline-offset-2 sm:px-10"
+          >
             <div>
-              <h4 className="text-white font-semibold text-lg mb-6">{t('home.footer.support')}</h4>
-              <ul className="space-y-4">
-                <li><a href="#" className="hover:text-emerald-400 transition-colors">{t('home.footer.helpCenter')}</a></li>
-                <li><a href="#" className="hover:text-emerald-400 transition-colors">{t('home.footer.safetyGuidelines')}</a></li>
-                <li><a href="#" className="hover:text-emerald-400 transition-colors">{t('home.footer.termsOfService')}</a></li>
-                <li><a href="#" className="hover:text-emerald-400 transition-colors">{t('home.footer.privacyPolicy')}</a></li>
-              </ul>
+              <p className="font-ledger text-xs uppercase tracking-[0.2em] text-rule">{t('home.buyEyebrow')}</p>
+              <h2 className="mt-3 font-display text-2xl font-semibold sm:text-3xl">
+                {t('home.buyTitle')}
+              </h2>
+              <p className="mt-3 max-w-sm text-ink/70">
+                {t('home.buyDesc')}
+              </p>
             </div>
+            <span className="inline-flex items-center gap-2 font-semibold text-maroon">
+              {t('home.buyCta')}
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </span>
+          </a>
+        </div>
+      </section>
+
+      {/* Today's Mandi Board */}
+      <section className="ledger-rule bg-paper">
+        <div className="mx-auto max-w-6xl px-8 py-14 sm:pl-16">
+          <div className="flex flex-wrap items-start justify-between gap-6">
+            <div>
+              <p className="font-ledger text-xs uppercase tracking-[0.2em] text-ink/50">
+                {t('home.mandiUpdated')}
+              </p>
+              <h2 className="mt-2 font-display text-3xl font-semibold">
+                {t('home.mandiTitle')}
+              </h2>
+            </div>
+            <StampBadge label={t('home.stampLabel')} sublabel={t('home.stampSublabel')} />
           </div>
-          
-          <div className={`pt-8 border-t flex flex-col md:flex-row justify-between items-center gap-4 ${
-            isDark ? 'border-slate-800' : 'border-slate-800'
+
+          {isLive ? (
+            <>
+              <div className="mt-8 rounded-sm border border-ink/15 bg-paper/60 p-1 sm:p-4">
+                <LedgerTable columns={priceColumns} rows={boardRows} />
+              </div>
+              <p className="mt-3 flex items-center gap-2 text-xs text-ink/70">
+                <span className="relative flex h-2 w-2 shrink-0">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-leaf opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-leaf" />
+                </span>
+                {t('home.mandiLive')}
+              </p>
+            </>
+          ) : (
+            <div className="mt-8 flex flex-col items-center justify-center rounded-sm border-2 border-dashed border-ink/15 py-16 text-center">
+              <p className="text-ink/70">
+                {liveBoardFailed ? t('common.fetchError') : t('home.mandiLoading')}
+              </p>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Tallies — real counts only; section is omitted entirely when
+          there's nothing truthful to show (e.g. a brand-new deployment). */}
+      {tallies.length > 0 && (
+      <section className="ledger-rule bg-paper-dim">
+        <div className="mx-auto max-w-6xl px-8 py-12 sm:pl-16">
+          <dl className={`grid grid-cols-1 divide-y divide-ink/15 sm:divide-x sm:divide-y-0 ${
+            tallies.length === 1 ? 'sm:grid-cols-1' : tallies.length === 2 ? 'sm:grid-cols-2' : 'sm:grid-cols-3'
           }`}>
-            <p className={`text-sm ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>{t('home.footer.copyright')}</p>
-            <p className={`text-sm flex items-center gap-1 ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
-              {t('home.footer.madeWith')} <span className="text-red-500">♥</span> {t('home.footer.forIndianAgriculture')}
-            </p>
+            {tallies.map((item) => (
+              <div key={item.label} className="py-6 first:pt-0 sm:px-8 sm:py-0 sm:first:pl-0">
+                <dt className="text-sm text-ink/60">{item.label}</dt>
+                <dd className={`mt-1 font-ledger text-4xl font-semibold tabular-nums ${item.accent ? 'text-leaf' : 'text-maroon'}`}>
+                  {item.value}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      </section>
+      )}
+
+      {/* Closing CTA */}
+      <section className="ledger-rule bg-paper">
+        <div className="mx-auto flex max-w-6xl flex-col items-start gap-6 px-8 py-16 sm:pl-16">
+          <h2 className="max-w-lg font-display text-3xl font-semibold">
+            {t('home.closingTitle')}
+          </h2>
+          <div className="flex flex-wrap gap-4">
+            <Button as="a" href="#farmer-signup" variant="primary">
+              {t('home.closingFarmerCta')}
+            </Button>
+            <Button as="a" href="#customer-signup" variant="outline">
+              {t('home.closingBuyerCta')}
+            </Button>
           </div>
         </div>
-      </footer>
+      </section>
+
+      <Footer />
     </div>
   )
 }

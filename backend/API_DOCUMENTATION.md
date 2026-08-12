@@ -1,14 +1,14 @@
 # Backend API Documentation
 
 ## Overview
-This is the Express.js backend server for the KisanSetu (Farmer's Companion) application. It provides authentication, market data, and crop analysis endpoints.
+Express.js backend for KisanSetu. Provides authentication (with farmer/customer roles), crop listings, real-time chat (Socket.IO), market price data, and AI crop analysis.
 
 ## Setup & Installation
 
 ### Prerequisites
-- Node.js (v14 or higher)
-- MongoDB Atlas account with connection string
-- .env file with required environment variables
+- Node.js (v18 or higher)
+- MongoDB connection string (Atlas or local)
+- A `.env` file — copy `.env.example` and fill in real values; never commit `.env`
 
 ### Installation Steps
 ```bash
@@ -19,23 +19,12 @@ npm start    # Production mode
 ```
 
 ## Environment Variables (.env)
-```
-JWT_SECRET=abhd7755
-NODE_ENV=development
-PORT=5000
-API_KEY=579b464db66ec23bdd00000168192898a7804f5c78598b8f95b641a1
-MONGO_URI=mongodb+srv://...
-GOOGLE_CLIENT_ID=952084918159-...
-CLOUDINARY_CLOUD_NAME=...
-CLOUDINARY_API_KEY=...
-CLOUDINARY_API_SECRET=...
-GEMINI_API_KEY=...
-```
+See `.env.example` for the full list of required variables (`JWT_SECRET`, `MONGO_URI`, `API_KEY`, `GOOGLE_CLIENT_ID`, Cloudinary/Gemini keys, etc.). The server will refuse to start if `MONGO_URI` or `JWT_SECRET` is missing.
 
 ## API Routes
 
 ### Authentication Endpoints
-All auth routes are prefixed with `/api/auth`
+All auth routes are prefixed with `/api/auth`. Signup/login are rate-limited (20 requests / 15 min per IP).
 
 #### 1. User Signup
 **POST** `/api/auth/signup`
@@ -45,9 +34,11 @@ Request body:
 {
   "Username": "farmer_name",
   "email": "farmer@example.com",
-  "password": "secure_password"
+  "password": "secure_password",
+  "role": "farmer"
 }
 ```
+`role` must be `"farmer"` or `"customer"`.
 
 Response:
 ```json
@@ -56,7 +47,8 @@ Response:
   "user": {
     "_id": "user_id",
     "Username": "farmer_name",
-    "email": "farmer@example.com"
+    "email": "farmer@example.com",
+    "role": "farmer"
   }
 }
 ```
@@ -66,10 +58,7 @@ Response:
 
 Request body:
 ```json
-{
-  "email": "farmer@example.com",
-  "password": "secure_password"
-}
+{ "email": "farmer@example.com", "password": "secure_password" }
 ```
 
 Response:
@@ -78,62 +67,63 @@ Response:
   "user": {
     "_id": "user_id",
     "Username": "farmer_name",
-    "email": "farmer@example.com"
+    "email": "farmer@example.com",
+    "role": "farmer"
   }
 }
 ```
-
-Note: JWT token is automatically set in httpOnly cookie
+JWT token (includes the user's role) is set automatically in an httpOnly cookie. Password hashes are never included in any response.
 
 #### 3. Get Current User (Protected)
-**GET** `/api/auth/me`
+**GET** `/api/auth/me` — requires valid JWT cookie.
 
-Headers:
-- Requires valid JWT token in cookie (set automatically after login)
+Response: same `user` shape as login.
 
-Response:
+#### 4. Update Current User (Protected)
+**PUT** `/api/auth/me` — requires valid JWT cookie.
+
+Request body (all fields optional):
 ```json
-{
-  "user": {
-    "_id": "user_id",
-    "Username": "farmer_name",
-    "email": "farmer@example.com"
-  }
-}
+{ "Username": "new_name", "email": "new@example.com", "password": "new_password" }
 ```
+Password is only re-hashed if a new one is provided.
 
-#### 4. User Logout
-**POST** `/api/auth/logout`
+#### 5. User Logout
+**POST** `/api/auth/logout` — clears the JWT cookie.
 
-Response:
-```json
-{
-  "message": "User logged out successfully"
-}
-```
-
-Clears the JWT token from cookies
-
-#### 5. Google OAuth Login
+#### 6. Google OAuth Login
 **POST** `/api/auth/google`
 
 Request body:
 ```json
-{
-  "token": "google_id_token"
-}
+{ "token": "google_id_token", "role": "farmer" }
 ```
+`role` is only used the first time an account is created via Google; existing accounts keep their originally registered role.
 
-Response:
-```json
-{
-  "user": {
-    "_id": "user_id",
-    "Username": "user_name",
-    "email": "user@gmail.com"
-  }
-}
-```
+### Listings Endpoints
+All prefixed with `/api/listings`.
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| POST | `/create` | required | Create a listing (owned by the authenticated farmer) |
+| GET | `/my-listings` | required | Listings owned by the authenticated user |
+| GET | `/all` | public | All listings, with farmer info populated |
+| GET | `/:id` | public | Single listing by id |
+| PUT | `/:id` | required (owner only) | Update a listing |
+| DELETE | `/:id` | required (owner only) | Delete a listing |
+
+### Messages Endpoints
+All prefixed with `/api/messages`, all require auth.
+
+| Method | Path | Description |
+|---|---|---|
+| GET | `/conversation/:otherUserId` | Message history with another user |
+| GET | `/conversations` | List of conversations for the current user |
+| POST | `/send` | HTTP fallback for sending a message (Socket.IO is primary) |
+
+### Real-time Chat (Socket.IO)
+- `join` — client registers its socket under a userId
+- `send_message` — persists a message and emits `receive_message` / `conversation_updated` to the recipient if online, plus `message_sent` / `conversation_updated` back to the sender
 
 ### Market Data Endpoints
 
@@ -141,52 +131,20 @@ Response:
 **GET** `/api/market-prices`
 
 Query Parameters:
-- `limit` (optional): Number of records to return (default: 100, max: 500)
-- `date` (optional): Filter by date (format: DD/MM/YYYY)
-- `state` (optional): Filter by state
+- `limit` (optional, default 100, max 5000)
+- `date` (optional, format DD/MM/YYYY)
+- `state` (optional)
+- `commodity` (optional)
 
-Response:
-```json
-{
-  "success": true,
-  "records": [
-    {
-      "state": "Karnataka",
-      "district": "Udupi",
-      "market": "Udupi",
-      "commodity": "Coconut",
-      "variety": "Other",
-      "modal_price": 2800,
-      "arrival_date": "30/01/2026"
-    }
-  ],
-  "source": "latest-available"
-}
-```
+Falls back to the local database if the data.gov.in API is unreachable or returns fewer records than requested.
 
-### Market Data Storage Endpoint
+#### Stored Crop Prices
+- **POST** `/api/store-crop-prices?days=N` — fetches and stores the last N available days of prices (max 60). Maintenance-only; requires header `x-admin-secret` matching the `ADMIN_SECRET` env var.
+- **GET** `/api/crop-prices` — reads stored prices, filterable by `commodity` / `district`
 
-#### Store Crop Prices (Admin)
-**POST** `/api/store-crop-prices`
-
-Fetches and stores the last 3 days of crop prices from the API.gov.in data source
-
-Response:
-```json
-{
-  "success": true,
-  "message": "Successfully stored X prices for Y crops",
-  "details": {
-    "totalRecords": 1000,
-    "uniqueCrops": 12,
-    "crops": {
-      "Tomato": 150,
-      "Onion": 180,
-      ...
-    }
-  }
-}
-```
+### AI Analysis Endpoints
+- **GET** `/api/ai/analyze/:commodity` — Gemini-based analysis for one commodity
+- **GET** `/api/ai/crop-rankings` — all crops ranked by demand
 
 ## Architecture
 
@@ -194,32 +152,24 @@ Response:
 ```
 backend/
 ├── config/
-│   ├── db.js              # Database configuration
-│   └── token.js           # JWT token generation
+│   └── token.js           # JWT token generation (embeds user id + role)
 ├── controller.js/
-│   └── auth.js            # Authentication logic
+│   └── auth.js             # Authentication logic
 ├── middleware/
-│   └── authMiddleware.js  # JWT verification middleware
+│   └── authMiddleware.js   # JWT verification middleware
 ├── model/
-│   ├── model.js           # User schema
-│   └── priceModel.js      # Market price schema
+│   ├── model.js             # User schema (role: farmer/customer)
+│   ├── Listing.js           # Crop listing schema
+│   ├── Message.js           # Chat message schema
+│   └── priceModel.js        # Market price schema
 ├── routes/
-│   └── auth.js            # Authentication routes
+│   ├── auth.js               # Authentication routes
+│   ├── listings.js           # Listing routes
+│   └── messages.js           # Message routes
 ├── services/
-│   └── geminiService.js   # AI analysis services
-├── .env                   # Environment variables
-├── package.json           # Dependencies
-└── server.js              # Main entry point
-```
-
-### Middleware
-
-#### Authentication Middleware
-`middleware/authMiddleware.js` - Verifies JWT token from cookies and protects routes
-
-Usage:
-```javascript
-app.get('/api/auth/me', isAuthenticated, getUser)
+│   └── geminiService.js    # AI analysis services
+├── .env                    # Environment variables (not committed)
+└── server.js                # Entry point: Express + Socket.IO + market-price routes
 ```
 
 ## Data Models
@@ -227,130 +177,83 @@ app.get('/api/auth/me', isAuthenticated, getUser)
 ### User Model
 ```javascript
 {
-  Username: String (required, unique),
+  Username: String (required),
   email: String (required, unique),
   password: String (required, hashed with bcryptjs),
+  role: String (required, enum: ['farmer', 'customer']),
   timestamps: true
 }
 ```
 
-### Price Model
+### Listing Model
 ```javascript
 {
-  state: String,
-  district: String,
-  market: String,
-  commodity: String,
+  farmerId: ObjectId (ref: User, required),
+  commodity: String (required),
   variety: String,
-  modal_price: Number,
-  min_price: Number,
-  max_price: Number,
-  arrival_date: String,
-  created_at: Date
+  quantity: Number (required),
+  unit: String (enum: ['kg', 'quintal', 'ton']),
+  expectedPrice: Number (required),
+  description: String,
+  location: String (required),
+  createdAt: Date,
+  updatedAt: Date
+}
+```
+
+### Message Model
+```javascript
+{
+  conversationId: String (required, indexed),
+  senderId: ObjectId (ref: User, required),
+  receiverId: ObjectId (ref: User, required),
+  listingId: ObjectId (ref: Listing),
+  message: String (required),
+  read: Boolean,
+  createdAt: Date (indexed)
 }
 ```
 
 ## Security Features
 
-- **Password Hashing**: bcryptjs (10 rounds)
-- **JWT Authentication**: Secure token-based authentication
+- **Password Hashing**: bcryptjs (10 rounds), never returned in API responses
+- **JWT Authentication**: token embeds user id + role; role is never trusted from the client
 - **HttpOnly Cookies**: JWT tokens stored in secure, httpOnly cookies
-- **CORS**: Configured for localhost:5173 (frontend)
-- **Environment Variables**: Sensitive data in .env file
+- **CORS**: configured via `FRONTEND_ORIGIN` (comma-separated allowed origins)
+- **Rate limiting**: on `/api/auth/signup`, `/api/auth/login`, `/api/auth/google`
+- **Startup validation**: server refuses to start if `MONGO_URI`/`JWT_SECRET` are missing
+- **Environment Variables**: all secrets in `.env` (gitignored), no secrets hardcoded in source
 
 ## External APIs
 
-### Government of India Data Portal
-- Fetches agricultural market prices
-- API Key: `579b464db66ec23bdd00000168192898a7804f5c78598b8f95b641a1`
-- Resource: Agricultural market information from various states
-
-### Google OAuth
-- Allows users to sign in with Google
-- Client ID: `952084918159-7rumtd7e8ublui9pphgum4rtp4uo87o8.apps.googleusercontent.com`
-
-### Google Generative AI (Gemini)
-- Provides crop analysis and recommendations
-- Used in CropAnalysis pages
+- **data.gov.in** — agricultural market prices (requires `API_KEY` env var)
+- **Google OAuth** — sign-in with Google (requires `GOOGLE_CLIENT_ID` env var)
+- **Google Generative AI (Gemini)** — crop analysis (requires `GEMINI_API_KEY` env var)
 
 ## Error Handling
 
-All endpoints return appropriate HTTP status codes:
-- **200**: Success
-- **201**: Created
-- **400**: Bad Request (validation error)
-- **401**: Unauthorized (auth required)
-- **500**: Server Error
-
-Error response format:
-```json
-{
-  "message": "Error description"
-}
-```
-
-## Development
-
-### Running in Development Mode
-```bash
-npm run dev
-```
-
-Uses nodemon to automatically restart server on file changes
-
-### Testing Endpoints
-
-Use Postman, curl, or VS Code REST Client to test endpoints:
-
-```http
-### Sign up
-POST http://localhost:5000/api/auth/signup
-Content-Type: application/json
-
-{
-  "Username": "testfarmer",
-  "email": "test@example.com",
-  "password": "password123"
-}
-
-### Login
-POST http://localhost:5000/api/auth/login
-Content-Type: application/json
-
-{
-  "email": "test@example.com",
-  "password": "password123"
-}
-
-### Get Current User
-GET http://localhost:5000/api/auth/me
-
-### Get Market Prices
-GET http://localhost:5000/api/market-prices?limit=100
-```
+All endpoints return JSON with appropriate HTTP status codes (200/201/400/401/403/404/500). Unmatched routes return a JSON 404; unhandled errors are caught by a final JSON error handler.
 
 ## Troubleshooting
 
+### Server won't start
+- Check the console for a "Missing required environment variable(s)" error — set `MONGO_URI` and `JWT_SECRET` in `.env`
+
 ### MongoDB Connection Error
-- Verify MONGO_URI in .env file
+- Verify `MONGO_URI` in `.env`
 - Check MongoDB Atlas IP whitelist includes your IP
-- Ensure database is active
 
 ### JWT Token Invalid
-- Check JWT_SECRET in .env
+- Check `JWT_SECRET` in `.env`
 - Verify token hasn't expired (7 days)
 - Clear cookies and re-login
 
 ### CORS Errors
-- Verify frontend is running on localhost:5173
-- Check CORS configuration in server.js
+- Verify the frontend origin is included in `FRONTEND_ORIGIN`
 
 ## Future Enhancements
 
-- [ ] Rate limiting
 - [ ] Request validation schemas
 - [ ] Refresh token mechanism
-- [ ] User profile management
-- [ ] Farmer-specific features
-- [ ] Real-time price notifications
-- [ ] Analytics dashboard
+- [ ] Password reset / email verification
+- [ ] Automated test suite

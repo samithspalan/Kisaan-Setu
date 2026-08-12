@@ -1,13 +1,14 @@
 import { useState, useEffect, useRef } from 'react'
-import { Send, Search, MoreVertical, Home, Bell, Store, LogOut, Sun, Moon, Leaf, Loader, BarChart3, Mail } from 'lucide-react'
-import { useTheme } from '../context/ThemeContext'
+import { Send, Search, ArrowLeft, Loader, Mail, AlertCircle } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import axios from 'axios'
 import io from 'socket.io-client'
+import AppNav from '../components/ui/AppNav'
+import Slip from '../components/ui/Slip'
 import { API_BASE, SOCKET_URL } from '../config/api'
 
-export default function FarmersChatsPage({ onBack, onNavigate }) {
-  const { isDark, toggleTheme } = useTheme()
-  const [activeLink, setActiveLink] = useState('chats')
+export default function FarmersChatsPage({ onBack, onNavigate, onLogout }) {
+  const { t } = useTranslation()
   const [selectedChat, setSelectedChat] = useState(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [messageText, setMessageText] = useState('')
@@ -16,6 +17,8 @@ export default function FarmersChatsPage({ onBack, onNavigate }) {
   const [loading, setLoading] = useState(false)
   const [sending, setSending] = useState(false)
   const [currentUserId, setCurrentUserId] = useState(null)
+  const [conversationsFailed, setConversationsFailed] = useState(false)
+  const [sendError, setSendError] = useState(false)
   const socketRef = useRef(null)
   const messagesEndRef = useRef(null)
 
@@ -32,52 +35,51 @@ export default function FarmersChatsPage({ onBack, onNavigate }) {
     const userId = localStorage.getItem('userId')
     if (userId) {
       setCurrentUserId(userId)
-      
-      // Initialize Socket.IO
-      socketRef.current = io(SOCKET_URL)
+
+      // Initialize Socket.IO — withCredentials sends the auth cookie so the
+      // server can verify identity itself rather than trusting a client-sent id.
+      socketRef.current = io(SOCKET_URL, { withCredentials: true })
 
       socketRef.current.on('connect', () => {
-        console.log('[FARMER] Connected to socket server, socket ID:', socketRef.current.id)
-        socketRef.current.emit('join', userId)
-        console.log('[FARMER] Emitted join event with userId:', userId)
+        socketRef.current.emit('join')
       })
 
       socketRef.current.on('receive_message', (message) => {
-        console.log('[FARMER] Received message:', message)
         setMessages(prev => [...prev, message])
         // Refresh conversations list when receiving new message
         setTimeout(() => fetchConversations(), 100)
       })
 
       socketRef.current.on('message_sent', (message) => {
-        console.log('[FARMER] Message sent:', message)
         setMessages(prev => [...prev, message])
         // Refresh conversations list after sending
         setTimeout(() => fetchConversations(), 100)
       })
 
       socketRef.current.on('message_error', (error) => {
-        console.error('[FARMER] Message error:', error)
-        alert('Failed to send message: ' + error.error)
+        console.error('Message error:', error)
+        setSendError(true)
       })
 
       socketRef.current.on('conversation_updated', () => {
-        console.log('[FARMER] Conversation updated event received, refreshing list...')
         fetchConversations()
       })
 
       // Fetch all conversations
-      console.log('[FARMER] Initial fetch conversations on mount')
       fetchConversations()
-      
-      // Poll for new conversations every 3 seconds (backup for real-time)
-      const pollInterval = setInterval(() => {
-        console.log('[FARMER] Polling conversations (every 3 sec)...')
-        fetchConversations()
-      }, 3000)
+
+      // The socket already pushes `conversation_updated`, so the old 3s
+      // poll was ~1,200 redundant requests an hour against a farmer's
+      // metered mobile data. Refresh when the tab becomes visible again
+      // instead, which covers the case where the socket dropped while
+      // the phone was asleep.
+      const onVisible = () => {
+        if (document.visibilityState === 'visible') fetchConversations()
+      }
+      document.addEventListener('visibilitychange', onVisible)
 
       return () => {
-        clearInterval(pollInterval)
+        document.removeEventListener('visibilitychange', onVisible)
         if (socketRef.current) {
           socketRef.current.disconnect()
         }
@@ -93,24 +95,16 @@ export default function FarmersChatsPage({ onBack, onNavigate }) {
 
   const fetchConversations = async () => {
     try {
-      const farmerId = localStorage.getItem('userId')
-      console.log('[FARMER] Fetching conversations for farmer:', farmerId)
       const response = await axios.get(`${API_BASE}/messages/conversations`, {
         withCredentials: true
       })
-      console.log('[FARMER] ✅ API Response received, status:', response.status)
-      console.log('[FARMER] Response data:', response.data)
       if (response.data.success) {
-        console.log('[FARMER] ✅ Setting conversations:', response.data.conversations.length, 'conversations')
         setConversations(response.data.conversations)
-      } else {
-        console.log('[FARMER] ⚠️ No success in response')
+        setConversationsFailed(false)
       }
     } catch (error) {
-      console.error('[FARMER] ❌ Error fetching conversations:')
-      console.error('  - Message:', error.message)
-      console.error('  - Status:', error.response?.status)
-      console.error('  - Data:', error.response?.data)
+      console.error('Error fetching conversations:', error)
+      setConversationsFailed(true)
     }
   }
 
@@ -142,22 +136,20 @@ export default function FarmersChatsPage({ onBack, onNavigate }) {
   const handleSendMessage = () => {
     if (messageText.trim() && selectedChat && currentUserId) {
       setSending(true)
+      setSendError(false)
       const messageData = {
         senderId: currentUserId,
         receiverId: selectedChat.id,
         message: messageText
       }
 
-      console.log('[FARMER] Sending message:', messageData)
       // Send via Socket.IO
       socketRef.current.emit('send_message', messageData)
       setMessageText('')
       setSending(false)
-      
+
       // Refresh conversations list to show new conversation
       setTimeout(() => fetchConversations(), 500)
-    } else {
-      console.log('[FARMER] Cannot send message - missing data:', { messageText, selectedChat, currentUserId })
     }
   }
 
@@ -165,244 +157,153 @@ export default function FarmersChatsPage({ onBack, onNavigate }) {
     conv.otherUser?.Username?.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
+  const navLinks = [
+    { id: 'home', label: t('dash.navHome'), href: 'farmer-dashboard', onClick: (e) => { e.preventDefault(); onNavigate('farmer-dashboard') } },
+    { id: 'market-prices', label: t('dash.navMarket'), href: 'market-analysis', onClick: (e) => { e.preventDefault(); onNavigate('market-analysis') } },
+    { id: 'chats', label: t('dash.navChats'), href: 'chats', onClick: (e) => e.preventDefault() },
+    { id: 'listings', label: t('dash.navListings'), href: 'my-listings', onClick: (e) => { e.preventDefault(); onNavigate('my-listings') } },
+  ]
+
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${isDark ? 'bg-slate-900 text-slate-100' : 'bg-[#F0FDF4]'}`}>
-      {/* Logo */}
-      <div className="fixed top-6 left-6 z-40 flex items-center gap-2">
-        <Leaf className="w-8 h-8 text-emerald-600" />
-        <div>
-          <h1 className={`text-xl font-bold leading-none transition-colors duration-300 ${
-            isDark ? 'text-slate-100' : 'text-emerald-950'
-          }`}>KisanSetu</h1>
-          <span className={`text-[10px] uppercase tracking-wider font-bold transition-colors duration-300 ${
-            isDark ? 'text-emerald-400' : 'text-emerald-600'
-          }`}>Farmer Connect</span>
-        </div>
-      </div>
+    <div className="ledger-scope flex min-h-screen flex-col bg-paper">
+      <AppNav links={navLinks} active="chats" onLogout={onLogout || onBack} />
 
-      {/* Navigation Bar - Centered at top, floating */}
-      <nav className="fixed top-6 left-1/2 transform -translate-x-1/2 z-40 w-auto max-w-[90%] flex items-center gap-4">
-        <div className={`backdrop-blur-xl rounded-2xl px-2 py-2 shadow-xl shadow-emerald-900/5 border transition-colors duration-300 ${
-          isDark
-            ? 'bg-slate-800/80 border-slate-700/50 ring-1 ring-black/20'
-            : 'bg-white/80 border-white/50 ring-1 ring-black/5'
-        }`}>
-          <div className="flex gap-1 items-center">
-            {[
-              { id: 'home', label: 'Home', icon: Home },
-              { id: 'market-prices', label: 'Market Prices', icon: BarChart3 },
-              { id: 'chats', label: 'Chats', icon: Bell },
-              { id: 'listings', label: 'My Listings', icon: Store }
-            ].map(item => (
-              <button 
-                key={item.id}
-                onClick={() => {
-                  if (item.id === 'home' && onNavigate) {
-                    onNavigate('farmer-dashboard')
-                  } else if (item.id === 'market-prices' && onNavigate) {
-                    onNavigate('market-analysis')
-                  } else if (item.id === 'chats') {
-                    setActiveLink(item.id)
-                  } else if (item.id === 'listings' && onNavigate) {
-                    onNavigate('my-listings')
-                  }
-                }}
-                className={`flex items-center gap-2 font-semibold transition-all duration-300 px-5 py-2.5 rounded-xl text-sm ${
-                  activeLink === item.id 
-                    ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' 
-                    : isDark
-                      ? 'text-slate-400 hover:text-emerald-400 hover:bg-slate-700/50'
-                      : 'text-slate-600 hover:text-emerald-700 hover:bg-emerald-50/80'
-                }`}
-              >
-                <item.icon className={`w-4 h-4 ${activeLink === item.id ? 'text-emerald-100' : isDark ? 'text-slate-500' : 'text-slate-400'}`} />
-                {item.label}
-              </button>
-            ))}
-            <div className={`w-px h-8 transition-colors duration-300 ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`}></div>
-            <button
-              onClick={onBack}
-              className={`flex items-center justify-center w-10 h-10 rounded-xl transition-all ${
-                isDark
-                  ? 'text-slate-500 hover:text-red-400 hover:bg-red-950/30'
-                  : 'text-slate-400 hover:text-red-500 hover:bg-red-50'
-              }`}
-              title="Logout"
-            >
-              <LogOut className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-
-        {/* Theme Toggle Button */}
-        <button
-          onClick={toggleTheme}
-          className={`p-2 rounded-full transition-all duration-300 backdrop-blur-xl shadow-xl shadow-emerald-900/5 border pointer-events-auto cursor-pointer ${
-            isDark
-              ? 'bg-slate-800/80 text-yellow-400 hover:bg-slate-700 border-slate-700/50'
-              : 'bg-white/80 text-slate-700 hover:bg-white border-white/50'
-          }`}
-          title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-        >
-          {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-        </button>
-      </nav>
-
-      {/* Top Spacing for fixed navbar */}
-      <div className="h-24"></div>
-
-      {/* Main Chat Area */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 min-h-[calc(100vh-160px)] flex gap-6">
-        {/* Chat List */}
-        <div className={`w-full md:w-96 lg:w-1/3 rounded-2xl shadow-lg overflow-hidden flex flex-col ${
-          isDark ? 'bg-slate-800' : 'bg-white'
-        } ${selectedChat ? 'hidden md:flex' : ''}`}>
-          {/* Search */}
-          <div className={`p-4 border-b ${isDark ? 'border-slate-700/50' : 'border-slate-200'}`}>
+      <div className="mx-auto flex w-full max-w-6xl flex-1 gap-6 px-8 py-8 sm:pl-16">
+        {/* Conversation list */}
+        <Slip className={`flex w-full flex-col overflow-hidden md:w-96 ${selectedChat ? 'hidden md:flex' : ''}`}>
+          <div className="border-b border-ink/10 p-4">
             <div className="relative">
-              <Search className={`absolute left-3 top-3 w-5 h-5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`} />
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink/40" />
               <input
                 type="text"
-                placeholder="Search customers..."
+                placeholder={t('chat.searchCustomers')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className={`w-full pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-600 transition-all border-0 ${
-                  isDark
-                    ? 'bg-slate-700 text-slate-100 placeholder-slate-400'
-                    : 'bg-slate-100 text-slate-900 placeholder-slate-600'
-                }`}
+                className="w-full rounded-sm border border-ink/15 bg-paper py-2 pl-9 pr-3 font-body text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-maroon/40"
               />
             </div>
           </div>
 
-          {/* Chat List Items */}
           <div className="flex-1 overflow-y-auto">
             {filteredConversations.length > 0 ? (
               filteredConversations.map(conv => (
                 <button
                   key={conv.otherUser._id}
                   onClick={() => fetchConversation(conv.otherUser._id, conv.otherUser.Username, conv.otherUser.email)}
-                  className={`w-full p-4 border-b ${isDark ? 'border-slate-700/30' : 'border-slate-200/50'} transition-all text-left ${isDark ? 'hover:bg-slate-700/50' : 'hover:bg-slate-50'} ${selectedChat?.id === conv.otherUser._id ? (isDark ? 'bg-slate-700/50' : 'bg-emerald-50') : ''}`}
+                  className={`w-full border-b border-ink/10 p-4 text-left transition-colors hover:bg-paper-dim ${
+                    selectedChat?.id === conv.otherUser._id ? 'bg-maroon/5' : ''
+                  }`}
                 >
                   <div className="flex items-start gap-3">
-                    <div className="text-3xl shrink-0">👤</div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2 mb-1">
-                        <h3 className={`font-bold truncate ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{conv.otherUser.Username}</h3>
-                        <span className={`text-xs shrink-0 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-maroon/10 font-display text-sm font-semibold text-maroon">
+                      {conv.otherUser.Username?.[0]?.toUpperCase() || '?'}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-1 flex items-center justify-between gap-2">
+                        <h3 className="truncate font-display font-semibold leading-tight">{conv.otherUser.Username}</h3>
+                        <span className="shrink-0 text-xs text-ink/45">
                           {new Date(conv.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
-                      <p className={`text-xs mb-1 ${isDark ? 'text-slate-500' : 'text-slate-600'}`}>{conv.otherUser.email}</p>
-                      <p className={`text-sm truncate ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{conv.lastMessage.message}</p>
+                      <p className="truncate text-sm text-ink/60">{conv.lastMessage.message}</p>
                     </div>
                   </div>
                 </button>
               ))
+            ) : conversationsFailed ? (
+              <div className="flex h-full flex-col items-center justify-center p-8 text-center">
+                <AlertCircle className="mb-2 h-5 w-5 text-rule" />
+                <p className="mb-2 text-sm text-ink/60">{t('common.fetchError')}</p>
+                <button onClick={fetchConversations} className="text-sm font-semibold text-maroon hover:underline">
+                  {t('common.retry')}
+                </button>
+              </div>
             ) : (
-              <div className="flex items-center justify-center h-full p-8 text-center">
-                <p className={isDark ? 'text-slate-400' : 'text-slate-500'}>
-                  No conversations yet. Wait for customers to contact you!
-                </p>
+              <div className="flex h-full items-center justify-center p-8 text-center">
+                <p className="text-sm text-ink/50">{t('chat.noConversationsFarmer')}</p>
               </div>
             )}
           </div>
-        </div>
+        </Slip>
 
-        {/* Chat Window */}
+        {/* Chat window */}
         {selectedChat ? (
-          <div className={`flex-1 rounded-2xl shadow-lg overflow-hidden flex flex-col ${isDark ? 'bg-slate-800' : 'bg-white'}`}>
-            {/* Chat Header */}
-            <div className={`p-4 border-b ${isDark ? 'border-slate-700/50' : 'border-slate-200'} flex items-center justify-between`}>
-              <div className="flex items-center gap-3">
-                <button onClick={() => setSelectedChat(null)} className="md:hidden">
-                  <Mail className={`w-5 h-5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`} />
-                </button>
-                <div className="text-3xl">👤</div>
-                <div>
-                  <h2 className={`font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>{selectedChat.name}</h2>
-                  <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-                    {selectedChat.location || 'Customer'}
-                  </p>
-                </div>
-              </div>
-              <button className={`p-2 rounded-lg transition-all ${isDark ? 'hover:bg-slate-700' : 'hover:bg-slate-100'}`}>
-                <MoreVertical className={`w-5 h-5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`} />
+          <Slip className="flex flex-1 flex-col overflow-hidden">
+            <div className="flex items-center gap-3 border-b border-ink/10 bg-paper-dim p-4">
+              <button onClick={() => setSelectedChat(null)} aria-label={t('common.back')} className="md:hidden">
+                <ArrowLeft className="h-5 w-5 text-ink/60" />
               </button>
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-maroon/10 font-display text-sm font-semibold text-maroon">
+                {selectedChat.name?.[0]?.toUpperCase() || '?'}
+              </div>
+              <div>
+                <h2 className="font-display font-semibold leading-tight">{selectedChat.name}</h2>
+                <p className="text-xs text-ink/50">{selectedChat.location || t('chat.customerLabel')}</p>
+              </div>
             </div>
 
-            {/* Messages */}
-            <div className={`flex-1 overflow-y-auto p-4 space-y-4 ${isDark ? 'bg-slate-800/50' : 'bg-slate-50'}`}>
+            <div className="flex-1 space-y-3 overflow-y-auto bg-paper p-4">
               {loading ? (
-                <div className="flex items-center justify-center h-full">
-                  <Loader className="w-6 h-6 animate-spin text-emerald-600" />
+                <div className="flex h-full items-center justify-center">
+                  <Loader className="h-6 w-6 animate-spin text-maroon" />
                 </div>
               ) : messages.length > 0 ? (
                 messages.map((msg, idx) => (
                   <div key={idx} className={`flex ${msg.senderId._id === currentUserId ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-xs px-4 py-2 rounded-2xl ${
-                      msg.senderId._id === currentUserId
-                        ? isDark
-                          ? 'bg-emerald-600 text-white'
-                          : 'bg-emerald-600 text-white'
-                        : isDark
-                        ? 'bg-slate-700 text-slate-100'
-                        : 'bg-slate-100 text-slate-900'
+                    <div className={`max-w-xs rounded-sm px-4 py-2 ${
+                      msg.senderId._id === currentUserId ? 'bg-maroon text-paper' : 'bg-paper-dim text-ink'
                     }`}>
                       <p className="text-sm">{msg.message}</p>
-                      <p className={`text-xs mt-1 ${msg.senderId._id === currentUserId ? 'text-emerald-100' : isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                      <p className={`mt-1 text-xs ${msg.senderId._id === currentUserId ? 'text-paper/70' : 'text-ink/50'}`}>
                         {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="flex flex-col items-center justify-center h-full space-y-3 p-8">
-                  <div className="text-5xl mb-2">💬</div>
-                  <p className={`text-lg font-semibold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                    Start conversation with {selectedChat.name}
-                  </p>
-                  <p className={`text-sm text-center max-w-md ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                    Send a message to begin your chat. They'll be notified instantly!
-                  </p>
+                <div className="flex h-full flex-col items-center justify-center space-y-2 p-8 text-center">
+                  <Mail className="h-8 w-8 text-ink/25" />
+                  <p className="font-semibold text-ink/70">{t('chat.startConversation', { name: selectedChat.name })}</p>
+                  <p className="max-w-md text-sm text-ink/50">{t('chat.startConversationSub')}</p>
                 </div>
               )}
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Message Input */}
-            <div className={`p-4 border-t ${isDark ? 'border-slate-700/50' : 'border-slate-200'}`}>
+            <div className="border-t border-ink/10 p-4">
+              {sendError && (
+                <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-rule">
+                  <AlertCircle className="h-3.5 w-3.5 shrink-0" /> {t('common.fetchError')}
+                </p>
+              )}
               <div className="flex gap-2">
                 <input
                   type="text"
-                  placeholder="Type your message..."
+                  placeholder={t('chat.messagePlaceholder')}
                   value={messageText}
                   onChange={(e) => setMessageText(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                   disabled={sending}
-                  className={`flex-1 px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-600 transition-all border-0 ${
-                    isDark
-                      ? 'bg-slate-700 text-slate-100 placeholder-slate-400'
-                      : 'bg-slate-100 text-slate-900 placeholder-slate-600'
-                  }`}
+                  className="flex-1 rounded-sm border border-ink/15 bg-paper px-4 py-2 font-body text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-maroon/40"
                 />
                 <button
                   onClick={handleSendMessage}
                   disabled={sending || !messageText.trim()}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg transition-all flex items-center gap-2 disabled:opacity-50"
+                  aria-label={t('chat.send')}
+                  className="flex items-center gap-2 rounded-sm bg-maroon px-4 py-2 text-paper transition-colors hover:bg-maroon-dark disabled:opacity-50"
                 >
-                  {sending ? <Loader className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  {sending ? <Loader className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                 </button>
               </div>
             </div>
-          </div>
+          </Slip>
         ) : (
-          <div className={`flex-1 rounded-2xl shadow-lg flex items-center justify-center ${isDark ? 'bg-slate-800' : 'bg-white'}`}>
+          <Slip className="hidden flex-1 items-center justify-center md:flex">
             <div className="text-center">
-              <Mail className={`w-12 h-12 mx-auto mb-4 opacity-50 ${isDark ? 'text-slate-400' : 'text-slate-400'}`} />
-              <p className={`font-semibold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Select a customer to start chatting</p>
+              <Mail className="mx-auto mb-4 h-10 w-10 text-ink/25" />
+              <p className="font-semibold text-ink/60">{t('chat.selectCustomer')}</p>
             </div>
-          </div>
+          </Slip>
         )}
       </div>
     </div>

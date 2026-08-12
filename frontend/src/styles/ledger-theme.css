@@ -1,0 +1,129 @@
+/*
+  KisanSetu "Bahi Khata" identity.
+  Grounded in the ledger books (bahi khata) Indian traders and mandi
+  clerks have logged transactions in for generations: a maroon cloth
+  cover, cream ledger paper, a red margin rule, and an ink stamp for
+  anything officially verified. Prices and quantities are always set
+  in the mono face, like figures typed into a ledger column.
+*/
+
+@theme {
+  --font-display: 'Fraunces', ui-serif, Georgia, serif;
+  --font-body: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-ledger: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', monospace;
+
+  /* Named "maroon" rather than "cover" — Tailwind already claims the
+     bg-cover/object-cover utility names for background-size, so a
+     --color-cover token silently loses to that core utility. */
+  --color-maroon: #6E1423;
+  --color-maroon-dark: #530E19;
+  --color-ink: #241C15;
+  --color-paper: #F1E8D6;
+  --color-paper-dim: #E7DCC4;
+  --color-rule: #B23A2E;
+  --color-brass: #A9822F;
+  --color-brass-light: #D8B863;
+  --color-brass-dark: #7A5D22;
+  --color-seal: #26333F;
+
+  /* The one green in the palette — a muted forest ink for content that's
+     literally about crops (produce, price gains), not part of the ledger
+     frame itself (headers/nav/buttons stay maroon/brass). */
+  --color-leaf: #3F6B3F;
+  --color-leaf-dark: #2E4F2E;
+}
+
+/* Sets the default text/font only — deliberately no background-color
+   here. Tailwind's utilities (@import "tailwindcss") are emitted before
+   this file, so a same-specificity background rule here would always
+   beat a section's own bg-* utility in the cascade. Each section sets
+   its own background explicitly instead. */
+.ledger-scope {
+  font-family: var(--font-body);
+  color: var(--color-ink);
+}
+
+.ledger-scope .font-display {
+  font-family: var(--font-display);
+}
+
+.ledger-scope .font-ledger {
+  font-family: var(--font-ledger);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Ruled margin: the vertical red rule found down the left edge of a
+   ledger page, a couple of centimeters in from the spine. */
+.ledger-rule {
+  position: relative;
+}
+
+.ledger-rule::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 2.25rem;
+  width: 1px;
+  background: color-mix(in srgb, var(--color-rule) 55%, transparent);
+  pointer-events: none;
+}
+
+@media (max-width: 640px) {
+  .ledger-rule::before {
+    left: 1.25rem;
+  }
+}
+
+/* Ink stamp: the signature element. A circular, slightly rotated seal
+   that marks data as coming from the official government price feed,
+   rendered the way a rubber stamp presses unevenly into paper. */
+.ink-stamp {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  border: 2px solid currentColor;
+  border-radius: 9999px;
+  transform: rotate(-8deg);
+  position: relative;
+  font-family: var(--font-ledger);
+  letter-spacing: 0.08em;
+  mix-blend-mode: multiply;
+}
+
+.ink-stamp::before {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  border: 1px solid currentColor;
+  border-radius: 9999px;
+  opacity: 0.6;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ink-stamp {
+    animation: stamp-press 0.4s ease-out both;
+  }
+}
+
+@keyframes stamp-press {
+  0% { opacity: 0; transform: rotate(-8deg) scale(1.4); }
+  60% { opacity: 1; }
+  100% { opacity: 1; transform: rotate(-8deg) scale(1); }
+}
+
+/* Perforated / torn edge for "slip" cards (weighing-slip metaphor). */
+.slip-edge {
+  --notch: 10px;
+  -webkit-mask-image: radial-gradient(circle at var(--notch) var(--notch), transparent var(--notch), black calc(var(--notch) + 0.5px));
+  mask-image: radial-gradient(circle at var(--notch) var(--notch), transparent var(--notch), black calc(var(--notch) + 0.5px));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ledger-scope * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

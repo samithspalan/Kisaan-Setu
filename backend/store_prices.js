@@ -12,7 +12,9 @@ mongoose.connect(process.env.MONGO_URI)
 const storeData = async () => {
     try {
         console.log('Calling API to store crop prices...');
-        const response = await axios.post('http://localhost:5000/api/store-crop-prices');
+        const response = await axios.post('http://localhost:5000/api/store-crop-prices', null, {
+            headers: { 'x-admin-secret': process.env.ADMIN_SECRET }
+        });
         console.log('✅ Success:', response.data);
         process.exit(0);
     } catch (error) {

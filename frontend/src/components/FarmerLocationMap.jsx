@@ -1,5 +1,10 @@
 import { useEffect, useRef } from 'react';
-import { X } from 'lucide-react';
+import { X, MapPin } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+// Bundled with this component rather than loaded from unpkg in
+// index.html — that was a render-blocking third-party request on every
+// page load, for a stylesheet only this modal needs.
+import 'leaflet/dist/leaflet.css';
 
 // Location data for different cities (latitude, longitude)
 const CITY_COORDINATES = {
@@ -15,7 +20,8 @@ const CITY_COORDINATES = {
   'Ahmedabad': { lat: 23.0225, lng: 72.5714 },
 };
 
-export default function FarmerLocationMap({ farmerLocation, farmerName, onClose, isDark }) {
+export default function FarmerLocationMap({ farmerLocation, farmerName, onClose }) {
+  const { t } = useTranslation();
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
 
@@ -37,10 +43,10 @@ export default function FarmerLocationMap({ farmerLocation, farmerName, onClose,
         maxZoom: 18,
       }).addTo(map);
 
-      // Create custom marker icon
+      // Custom marker in the ledger's maroon, matching the app's identity
       const farmerIcon = L.divIcon({
         className: 'custom-farmer-marker',
-        html: `<div style="background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%); color: white; padding: 10px 16px; border-radius: 24px; font-weight: 700; box-shadow: 0 4px 12px rgba(20, 184, 166, 0.4); font-size: 14px; white-space: nowrap; border: 2px solid white;">
+        html: `<div style="background: linear-gradient(135deg, #6E1423 0%, #530E19 100%); color: #F1E8D6; padding: 10px 16px; border-radius: 2px; font-weight: 600; font-family: 'IBM Plex Sans', sans-serif; box-shadow: 0 4px 12px rgba(110, 20, 35, 0.4); font-size: 14px; white-space: nowrap; border: 2px solid #F1E8D6;">
           🌾 ${farmerName}
         </div>`,
         iconSize: [140, 50],
@@ -51,17 +57,18 @@ export default function FarmerLocationMap({ farmerLocation, farmerName, onClose,
       L.marker([coords.lat, coords.lng], { icon: farmerIcon })
         .addTo(map)
         .bindPopup(`
-          <div style="font-family: system-ui, -apple-system, sans-serif; padding: 8px;">
-            <strong style="font-size: 16px; color: #0f766e;">${farmerName}</strong><br>
-            <span style="color: #64748b; font-size: 14px;">📍 ${farmerLocation}</span>
+          <div style="font-family: 'IBM Plex Sans', system-ui, sans-serif; padding: 8px;">
+            <strong style="font-size: 16px; color: #6E1423;">${farmerName}</strong><br>
+            <span style="color: #241C15; opacity: 0.6; font-size: 14px;">📍 ${farmerLocation}</span>
           </div>
         `)
         .openPopup();
 
-      // Add circle to show general area
+      // Circle in leaf green — the produce/freshness accent, marking the
+      // general growing area rather than an exact pin.
       L.circle([coords.lat, coords.lng], {
-        color: '#14b8a6',
-        fillColor: '#14b8a6',
+        color: '#3F6B3F',
+        fillColor: '#3F6B3F',
         fillOpacity: 0.1,
         radius: 2000, // 2km radius
       }).addTo(map);
@@ -76,62 +83,48 @@ export default function FarmerLocationMap({ farmerLocation, farmerName, onClose,
   }, [farmerLocation, farmerName]);
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
-      <div className={`rounded-3xl w-full max-w-4xl max-h-[85vh] overflow-hidden shadow-2xl transform transition-all animate-slideUp ${
-        isDark ? 'bg-slate-800' : 'bg-white'
-      }`}>
+    <div className="ledger-scope fixed inset-0 z-50 flex items-center justify-center bg-ink/60 p-4">
+      <div className="w-full max-w-4xl overflow-hidden rounded-sm bg-paper shadow-2xl">
         {/* Header */}
-        <div className={`flex justify-between items-center p-6 border-b ${
-          isDark ? 'border-slate-700 bg-slate-800/50' : 'border-slate-200 bg-gradient-to-r from-teal-50 to-emerald-50'
-        }`}>
+        <div className="flex items-center justify-between gap-4 bg-maroon px-6 py-5 text-paper">
           <div>
-            <h3 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-              📍 {farmerName}'s Location
+            <h3 className="font-display text-xl font-semibold sm:text-2xl">
+              {t('map.titleFor', { name: farmerName })}
             </h3>
-            <p className={`text-sm mt-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-              View farmer's field location on the map
+            <p className="mt-1 text-sm text-paper/75">
+              {t('map.subtitle')}
             </p>
           </div>
           <button
             onClick={onClose}
-            className={`p-3 rounded-full transition-all hover:rotate-90 ${
-              isDark 
-                ? 'text-slate-400 hover:text-white hover:bg-slate-700' 
-                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'
-            }`}
+            aria-label={t('map.close')}
+            className="shrink-0 rounded-sm p-2 text-paper/75 transition-colors hover:bg-paper/10 hover:text-paper focus-visible:outline focus-visible:outline-2 focus-visible:outline-brass-light"
           >
-            <X className="w-6 h-6" />
+            <X className="h-5 w-5" />
           </button>
         </div>
 
         {/* Map Container */}
-        <div ref={mapRef} className="w-full h-[500px] bg-slate-100" />
+        <div ref={mapRef} className="h-[420px] w-full bg-paper-dim sm:h-[500px]" />
 
         {/* Footer Info */}
-        <div className={`p-6 flex items-center justify-between ${
-          isDark ? 'bg-slate-900/50 border-t border-slate-700' : 'bg-gradient-to-r from-teal-50 to-emerald-50 border-t border-slate-200'
-        }`}>
+        <div className="flex flex-wrap items-center justify-between gap-4 border-t border-ink/10 bg-paper-dim px-6 py-5">
           <div className="flex items-center gap-3">
-            <div className={`p-3 rounded-full ${isDark ? 'bg-teal-900/30' : 'bg-teal-100'}`}>
-              <svg className="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
+            <div className="rounded-sm bg-leaf/10 p-2.5">
+              <MapPin className="h-5 w-5 text-leaf" />
             </div>
             <div>
-              <p className={`text-sm font-semibold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                Location
+              <p className="font-ledger text-[11px] font-semibold uppercase tracking-wide text-ink/50">
+                {t('common.location')}
               </p>
-              <p className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              <p className="font-display font-semibold">
                 {farmerLocation}
               </p>
             </div>
           </div>
-          <div className={`px-4 py-2 rounded-full text-sm font-semibold ${
-            isDark ? 'bg-teal-900/30 text-teal-400' : 'bg-teal-100 text-teal-700'
-          }`}>
-            🗺️ Interactive Map
-          </div>
+          <span className="rounded-sm border border-brass/30 bg-brass/10 px-3 py-1.5 font-ledger text-xs font-semibold uppercase tracking-wide text-brass-dark">
+            {t('map.interactiveMap')}
+          </span>
         </div>
       </div>
     </div>

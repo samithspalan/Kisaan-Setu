@@ -1,18 +1,37 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { ThemeProvider } from './context/ThemeContext'
 import { authService } from './services/authService'
+
+// Eager: the entry points an unauthenticated visitor can land on. Keeping
+// these in the main chunk avoids a loading flash on first paint.
 import HomePage from './pages/HomePage'
-import FarmerDashboard from './pages/FarmerDashboard'
-import CustomerDashboard from './pages/CustomerDashboard'
-import MarketAnalysis from './pages/MarketAnalysis'
-import AboutPage from './pages/AboutPage'
 import FarmerLogin from './pages/FarmerLogin'
 import CustomerLogin from './pages/CustomerLogin'
 import FarmerSignup from './pages/FarmerSignup'
 import CustomerSignup from './pages/CustomerSignup'
-import FarmersChatsPage from './pages/FarmersChatsPage'
-import CustomerChatsPage from './pages/CustomerChatsPage'
-import MyListings from './pages/MyListings'
+
+/*
+ * Lazy: everything behind login. These pull in the heavy dependencies —
+ * recharts (MarketAnalysis), leaflet (the map in CustomerDashboard) and
+ * socket.io-client (chat). Previously all of it shipped in one 972KB
+ * bundle that a farmer downloaded before they could even see the login
+ * form.
+ */
+const FarmerDashboard = lazy(() => import('./pages/FarmerDashboard'))
+const CustomerDashboard = lazy(() => import('./pages/CustomerDashboard'))
+const MarketAnalysis = lazy(() => import('./pages/MarketAnalysis'))
+const FarmersChatsPage = lazy(() => import('./pages/FarmersChatsPage'))
+const CustomerChatsPage = lazy(() => import('./pages/CustomerChatsPage'))
+const MyListings = lazy(() => import('./pages/MyListings'))
+const AboutPage = lazy(() => import('./pages/AboutPage'))
+
+function RouteFallback() {
+  return (
+    <div className="ledger-scope flex min-h-screen items-center justify-center bg-paper">
+      <p className="font-ledger text-sm uppercase tracking-wide text-ink/70">Loading…</p>
+    </div>
+  )
+}
 
 function App() {
   const [currentPage, setCurrentPage] = useState(window.location.hash.slice(1) || 'home')
@@ -20,40 +39,46 @@ function App() {
   const [userType, setUserType] = useState(null) // 'farmer' or 'customer'
   const [loading, setLoading] = useState(true)
 
+  // handleHashChange below is registered once (see its effect) but needs the
+  // latest auth state. Assigning window.location.hash fires 'hashchange'
+  // asynchronously as a browser task, which can run before React's passive
+  // effects flush — so this ref is written synchronously at every call site
+  // that changes auth state and touches location.hash, not via a useEffect
+  // (whose timing relative to that task isn't guaranteed).
+  const authStateRef = useRef({ isAuthenticated, loading })
+
   // Check if user is authenticated on mount
   useEffect(() => {
     const checkAuth = async () => {
       try {
         const response = await authService.getCurrentUser()
-        console.log('Auth check response:', response)
-        
+
         // Check if response has user data (successful auth)
         if (response && response.user) {
-          console.log('User authenticated:', response.user)
+          authStateRef.current = { isAuthenticated: true, loading: false }
           setIsAuthenticated(true)
-          
+
           // Save user data to localStorage for messaging
           localStorage.setItem('userId', response.user._id)
           localStorage.setItem('userName', response.user.Username)
           localStorage.setItem('userEmail', response.user.email)
-          console.log('[AUTH] Saved userId to localStorage:', response.user._id)
-          
-          // Get userType from localStorage
-          const storedUserType = localStorage.getItem('userType')
-          if (storedUserType) {
-            console.log('Setting userType:', storedUserType)
-            setUserType(storedUserType)
-            // Respect explicit hash routes (for example login/signup),
-            // only auto-redirect when no route is specified.
-            const currentHash = window.location.hash.slice(1)
-            if (!currentHash) {
-              const dashboard = storedUserType === 'customer' ? 'customer-dashboard' : 'farmer-dashboard'
-              window.location.hash = dashboard
-              setCurrentPage(dashboard)
-            }
+
+          // Role always comes from the server-verified session, never from
+          // client-writable storage, so it can't be spoofed via devtools.
+          const role = response.user.role
+          setUserType(role)
+          localStorage.setItem('userType', role)
+
+          // Respect explicit hash routes (for example login/signup),
+          // only auto-redirect when no route is specified.
+          const currentHash = window.location.hash.slice(1)
+          if (!currentHash) {
+            const dashboard = role === 'customer' ? 'customer-dashboard' : 'farmer-dashboard'
+            window.location.hash = dashboard
+            setCurrentPage(dashboard)
           }
         } else {
-          console.log('User not authenticated')
+          authStateRef.current = { isAuthenticated: false, loading: false }
           setIsAuthenticated(false)
           setUserType(null)
           localStorage.removeItem('userType')
@@ -63,6 +88,7 @@ function App() {
         }
       } catch (error) {
         console.error('Auth check error:', error)
+        authStateRef.current = { isAuthenticated: false, loading: false }
         setIsAuthenticated(false)
         setUserType(null)
         localStorage.removeItem('userType')
@@ -81,7 +107,8 @@ function App() {
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.slice(1)
-      
+      const { isAuthenticated, loading } = authStateRef.current
+
       // Check if trying to access protected routes
       if ((hash === 'farmer-dashboard' || hash === 'market-analysis' || hash === 'chats') && !isAuthenticated && !loading) {
         const loginPage = hash === 'farmer-dashboard' || hash === 'market-analysis' ? 'farmer-login' : 'customer-login'
@@ -99,7 +126,7 @@ function App() {
     window.addEventListener('hashchange', handleHashChange)
 
     return () => window.removeEventListener('hashchange', handleHashChange)
-  }, [isAuthenticated, loading])
+  }, [])
 
   const handleNavigate = (page) => {
     // Check if trying to navigate to protected routes
@@ -122,6 +149,7 @@ function App() {
   const handleLogout = async () => {
     try {
       await authService.logout()
+      authStateRef.current = { isAuthenticated: false, loading: false }
       setIsAuthenticated(false)
       setUserType(null)
       localStorage.removeItem('userType')
@@ -133,6 +161,7 @@ function App() {
   }
 
   const handleLoginSuccess = (type = 'farmer') => {
+    authStateRef.current = { isAuthenticated: true, loading: false }
     setIsAuthenticated(true)
     setUserType(type)
     localStorage.setItem('userType', type)
@@ -157,6 +186,7 @@ function App() {
 
   return (
     <ThemeProvider>
+      <Suspense fallback={<RouteFallback />}>
       <div>
         {currentPage === 'farmer-dashboard' ? (
           isAuthenticated && userType === 'farmer' ? (
@@ -179,16 +209,16 @@ function App() {
         ) : currentPage === 'chats' ? (
           isAuthenticated ? (
             userType === 'customer' ? (
-              <CustomerChatsPage onBack={() => handleNavigate('customer-dashboard')} onNavigate={handleNavigate} />
+              <CustomerChatsPage onBack={() => handleNavigate('customer-dashboard')} onNavigate={handleNavigate} onLogout={handleLogout} />
             ) : (
-              <FarmersChatsPage onBack={() => handleNavigate('farmer-dashboard')} onNavigate={handleNavigate} />
+              <FarmersChatsPage onBack={() => handleNavigate('farmer-dashboard')} onNavigate={handleNavigate} onLogout={handleLogout} />
             )
           ) : (
             <HomePage />
           )
         ) : currentPage === 'my-listings' ? (
           isAuthenticated && userType === 'farmer' ? (
-            <MyListings onBack={() => handleNavigate('farmer-dashboard')} onNavigate={handleNavigate} />
+            <MyListings onNavigate={handleNavigate} onLogout={handleLogout} />
           ) : (
             <FarmerLogin onNavigate={handleNavigate} onLoginSuccess={handleLoginSuccess} />
           )
@@ -206,6 +236,7 @@ function App() {
           <HomePage />
         )}
       </div>
+      </Suspense>
     </ThemeProvider>
   )
 }

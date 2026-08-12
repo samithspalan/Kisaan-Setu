@@ -1,14 +1,24 @@
 import express from 'express';
-import { singUp, login, logout, getUser, googleLogin } from '../controller.js/auth.js';
+import rateLimit from 'express-rate-limit';
+import { singUp, login, logout, getUser, updateUser, googleLogin } from '../controller.js/auth.js';
 import isAuthenticated from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 20,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { message: "Too many attempts, please try again later" }
+});
+
 // Authentication Routes
-router.post('/signup', singUp);
-router.post('/login', login);
+router.post('/signup', authLimiter, singUp);
+router.post('/login', authLimiter, login);
 router.post('/logout', logout);
 router.get('/me', isAuthenticated, getUser);
-router.post('/google', googleLogin);
+router.put('/me', isAuthenticated, updateUser);
+router.post('/google', authLimiter, googleLogin);
 
 export default router;

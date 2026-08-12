@@ -38,7 +38,6 @@ router.get('/conversation/:otherUserId', isAuthenticated, async (req, res) => {
 router.get('/conversations', isAuthenticated, async (req, res) => {
   try {
     const userId = req.userID;
-    console.log(`\n🔍 [CONVERSATIONS] Fetching conversations for user: ${userId}`)
 
     const messages = await Message.find({
       $or: [{ senderId: userId }, { receiverId: userId }]
@@ -46,8 +45,6 @@ router.get('/conversations', isAuthenticated, async (req, res) => {
       .populate('senderId', 'Username email')
       .populate('receiverId', 'Username email')
       .sort({ createdAt: -1 });
-
-    console.log(`📊 [CONVERSATIONS] Found ${messages.length} messages for this user`)
 
     // Group by conversation
     const conversations = {};
@@ -68,8 +65,6 @@ router.get('/conversations', isAuthenticated, async (req, res) => {
         };
       }
     });
-
-    console.log(`✅ [CONVERSATIONS] Returning ${Object.keys(conversations).length} unique conversations`)
 
     res.json({
       success: true,
